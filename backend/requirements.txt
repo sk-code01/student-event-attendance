@@ -15,6 +15,7 @@ django-cors-headers==4.6.0
 # Static file serving from the WSGI process (Django admin, DRF browsable API,
 # Swagger UI). Keeps the reverse proxy free of any static-file rule.
 whitenoise==6.8.2
+gunicorn
 
 # API schema / OpenAPI / Swagger
 drf-spectacular==0.28.0
