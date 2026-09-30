@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiBaseUrl: '/api/v1',
+  apiBaseUrl: 'https://student-event-attendance.onrender.com/api/v1',
   /** See environment.ts for what this governs. */
   sessionInactivityTimeoutMinutes: 30,
 };
