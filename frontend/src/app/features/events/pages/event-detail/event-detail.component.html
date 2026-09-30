@@ -1,0 +1,112 @@
+<a routerLink="/student/events" class="back-link">&larr; Back to events</a>
+
+@if (loading()) {
+  <div aria-hidden="true">
+    <span class="skeleton skeleton-title"></span>
+    <span class="skeleton skeleton-text"></span>
+    <span class="skeleton skeleton-card"></span>
+  </div>
+  <span class="sr-only" role="status">Loading the event&hellip;</span>
+} @else if (errorMessage() && !event()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+} @else if (event(); as event) {
+  <div class="page-head">
+    <div class="page-head-titles">
+      <h1 class="page-title">{{ event.title }}</h1>
+      <p class="page-subtitle">
+        {{ event.category }} &middot; {{ event.event_date | date: 'fullDate' }} &middot; {{ event.venue }}
+      </p>
+    </div>
+    <div class="page-head-actions">
+      <span class="badge text-bg-secondary">{{ event.status }}</span>
+      @if (event.my_registration_status === 'REGISTERED') {
+        <span class="badge text-bg-info">You're registered</span>
+      }
+    </div>
+  </div>
+
+  @if (successMessage()) {
+    <div class="alert alert-success" role="status">{{ successMessage() }}</div>
+  }
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="section-title mb-3">About this event</h2>
+        <p class="mb-4">{{ event.description }}</p>
+
+        <dl class="detail-grid">
+          <div>
+            <dt class="detail-term">Date</dt>
+            <dd class="detail-desc">{{ event.event_date | date: 'fullDate' }}</dd>
+          </div>
+          <div>
+            <dt class="detail-term">Venue</dt>
+            <dd class="detail-desc">{{ event.venue }}</dd>
+          </div>
+          <div>
+            <dt class="detail-term">Category</dt>
+            <dd class="detail-desc">{{ event.category }}</dd>
+          </div>
+          <div>
+            <dt class="detail-term">Conducting college</dt>
+            <dd class="detail-desc">{{ event.conducting_college.name }} ({{ event.conducting_college.code }})</dd>
+          </div>
+          <div>
+            <dt class="detail-term">Registration window</dt>
+            <dd class="detail-desc">
+              {{ event.registration_start_date | date: 'mediumDate' }} &ndash;
+              {{ event.registration_end_date | date: 'mediumDate' }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- What you can do next, kept apart from the description so the action
+    is never buried under body copy. -->
+    <div class="card">
+      <div class="card-body">
+        <h2 class="section-title mb-3">Your participation</h2>
+
+        @if (event.my_registration_status === 'REGISTERED') {
+          <p class="mb-3">
+            You are registered for this event.
+            <a routerLink="/student/registrations">Manage in My Registrations</a>
+          </p>
+
+          @if (participationEligibility(); as elig) {
+            @if (elig.eligible) {
+              <a [routerLink]="['/student/events', event.id, 'participate']" class="btn btn-success">
+                Mark participation
+              </a>
+            } @else {
+              <p class="form-text mb-0">{{ elig.reason }}</p>
+            }
+          }
+        } @else if (event.my_registration_status === 'CANCELLED') {
+          <p class="mb-2"><span class="badge text-bg-secondary">Registration cancelled</span></p>
+          <p class="form-text mb-0">You cancelled your registration for this event.</p>
+        } @else if (event.is_registration_open) {
+          <p class="mb-3">Registration is open until {{ event.registration_end_date | date: 'mediumDate' }}.</p>
+          <button type="button" class="btn btn-primary" [disabled]="actionInProgress()" (click)="register()">
+            @if (actionInProgress()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            }
+            Register
+          </button>
+        } @else {
+          <p class="mb-2"><span class="badge text-bg-secondary">Registration not open</span></p>
+          <p class="form-text mb-0">
+            Registration for this event is closed. It opened
+            {{ event.registration_start_date | date: 'mediumDate' }} and closed
+            {{ event.registration_end_date | date: 'mediumDate' }}.
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+}

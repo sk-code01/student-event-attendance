@@ -1,0 +1,39 @@
+# Core framework
+Django==5.1.5
+djangorestframework==3.15.2
+
+# Auth
+djangorestframework-simplejwt==5.4.0
+
+# Database
+psycopg[binary]==3.2.4
+dj-database-url==2.3.0
+
+# CORS
+django-cors-headers==4.6.0
+
+# Static file serving from the WSGI process (Django admin, DRF browsable API,
+# Swagger UI). Keeps the reverse proxy free of any static-file rule.
+whitenoise==6.8.2
+
+# API schema / OpenAPI / Swagger
+drf-spectacular==0.28.0
+
+# Filtering
+django-filter==24.3
+
+# Environment variable management
+python-decouple==3.8
+
+# File / image validation
+Pillow==11.1.0
+
+# Report generation (Phase 7)
+# CSV uses the Python standard library; these cover the other two formats.
+openpyxl==3.1.5
+reportlab==4.2.5
+
+# AI / ML
+scikit-learn==1.6.1
+pandas==2.2.3
+numpy==2.2.2

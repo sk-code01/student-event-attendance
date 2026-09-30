@@ -1,0 +1,57 @@
+<a [routerLink]="[basePath, 'events']" class="back-link">&larr; Back to events</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Registrations</h1>
+  </div>
+</div>
+@if (event(); as event) {
+  <p class="text-muted small mb-4">{{ event.title }} &middot; {{ event.event_date | date: 'mediumDate' }}</p>
+}
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (registrations().length === 0) {
+  <app-empty-state
+    title="No registrations yet"
+    message="Students who register for this event will be listed here with the time they signed up."
+    icon="users"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Email</th>
+            <th scope="col">Status</th>
+            <th scope="col">Registered</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (registration of registrations(); track registration.id) {
+            <tr>
+              <td data-label="Student">{{ registration.student.username }}</td>
+              <td data-label="Email" class="small text-muted">{{ registration.student.email }}</td>
+              <td data-label="Status">
+                <span class="badge" [ngClass]="registration.status === 'REGISTERED' ? 'text-bg-info' : 'text-bg-secondary'">
+                  {{ registration.status }}
+                </span>
+              </td>
+              <td data-label="Registered" class="small text-muted">{{ registration.registered_at | date: 'medium' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

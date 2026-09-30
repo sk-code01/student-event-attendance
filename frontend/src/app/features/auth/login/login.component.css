@@ -1,0 +1,11 @@
+/*
+ * The page background and card surface come from the design tokens, so this
+ * file only carries what is specific to this screen.
+ *
+ * It previously hard-coded `background: #f7f7fb`, which overrode the theme:
+ * in dark mode the page stayed light behind a dark card. Layout lives in
+ * `.auth-page` / `.auth-card` in the global stylesheet now.
+ */
+
+/* Keep the aurora visible behind the card rather than painting over it. */
+:host { display: block; }

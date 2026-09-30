@@ -1,0 +1,72 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Manage Events</h1>
+  </div>
+  <div class="page-head-actions">
+    <a [routerLink]="[basePath, 'events', 'new']" class="btn btn-primary btn-sm">Create Event</a>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (events().length === 0) {
+  <app-empty-state
+    title="No events yet"
+    message="Events you create appear here as drafts until you publish them."
+    icon="calendar"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Registrations</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of events(); track event.id) {
+            <tr>
+              <td data-label="Title">{{ event.title }}</td>
+              <td data-label="Date" class="small text-muted">{{ event.event_date | date: 'mediumDate' }}</td>
+              <td data-label="Status"><span class="badge" [ngClass]="statusBadgeClass(event.status)">{{ event.status }}</span></td>
+              <td data-label="Registrations">
+                <a [routerLink]="[basePath, 'events', event.id, 'registrations']" class="small">View</a>
+              </td>
+              <td class="text-end">
+                @if (event.status === 'DRAFT') {
+                  <a [routerLink]="[basePath, 'events', event.id, 'edit']" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                  <button class="btn btn-sm btn-success me-2" [disabled]="actioningId() === event.id" (click)="publish(event)">
+                    Publish
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" [disabled]="actioningId() === event.id" (click)="cancel(event)">
+                    Cancel
+                  </button>
+                } @else if (event.status === 'PUBLISHED') {
+                  <button class="btn btn-sm btn-outline-danger" [disabled]="actioningId() === event.id" (click)="cancel(event)">
+                    Cancel
+                  </button>
+                } @else {
+                  <span class="text-muted small">Read-only</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

@@ -1,0 +1,51 @@
+# systemd unit for the Smart Student Event Participation and Attendance
+# Management System backend.
+#
+#   sudo cp deploy/ssepams.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ssepams
+#   sudo journalctl -u ssepams -f
+#
+# Adjust User, WorkingDirectory and the two paths to match the host.
+
+[Unit]
+Description=SEAMS-AI — Student Event & Attendance Management System with AI (Gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=ssepams
+Group=ssepams
+WorkingDirectory=/opt/ssepams/backend
+
+# Secrets live in this file, not in the unit: a unit file is world-readable by
+# default, an environment file can be chmod 600 and owned by the service user.
+EnvironmentFile=/opt/ssepams/backend/.env
+
+ExecStart=/opt/ssepams/backend/venv/bin/gunicorn config.wsgi:application \
+          -c /opt/ssepams/deploy/gunicorn.conf.py
+ExecReload=/bin/kill -s HUP $MAINPID
+
+Restart=on-failure
+RestartSec=5s
+
+# Logs to the journal; Gunicorn is configured to write to stdout/stderr.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ssepams
+
+# Hardening. MEDIA_ROOT is the one path the service must be able to write, so
+# the filesystem is read-only apart from it.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/opt/ssepams/backend/media
+
+[Install]
+WantedBy=multi-user.target

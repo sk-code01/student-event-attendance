@@ -1,0 +1,192 @@
+@if (authService.isAuthenticated()) {
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="app-shell" [class.is-collapsed]="collapsed()">
+    <!-- ===================================================== SIDEBAR === -->
+    <aside
+      class="app-sidebar"
+      [class.is-open]="mobileNavOpen()"
+      id="app-navigation"
+      [attr.aria-hidden]="null"
+    >
+      <div class="d-flex align-items-center justify-content-between gap-2">
+        <a [routerLink]="homeRoute()" class="brand" (click)="closeMobileNav()">
+          <span class="brand-mark" aria-hidden="true">SA</span>
+          <span class="brand-text">
+            <span class="brand-name">SEAMS-AI</span>
+            <span class="brand-role">{{ roleLabel() }}</span>
+          </span>
+        </a>
+
+        <!-- Mobile close. Hidden on desktop where the sidebar is permanent. -->
+        <button
+          type="button"
+          class="icon-btn d-lg-none"
+          aria-label="Close navigation menu"
+          (click)="closeMobileNav()"
+        >
+          <app-icon name="close" />
+        </button>
+      </div>
+
+      <nav class="mt-2" aria-label="Main navigation">
+        @for (section of sections(); track section.label) {
+          <div class="nav-section">
+            <div class="nav-section-label">{{ section.label }}</div>
+            <ul class="nav-list">
+              @for (item of section.items; track item.route) {
+                <li>
+                  <!-- routerLinkActive gives the active state; `exact` stops a
+                       section root such as /admin staying lit on every child. -->
+                  <a
+                    [routerLink]="item.route"
+                    routerLinkActive="is-active"
+                    [routerLinkActiveOptions]="{ exact: !!item.exact }"
+                    class="nav-link-item"
+                    (click)="closeMobileNav()"
+                  >
+                    <span class="nav-icon"><app-icon [name]="item.icon" /></span>
+                    <span class="nav-label">{{ item.label }}</span>
+                    @if (item.route === '/dashboard' && notificationService.unreadCount() > 0) {
+                      <span class="nav-badge" aria-hidden="true">{{ notificationService.unreadCount() }}</span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </nav>
+
+      <!-- Collapse control. Desktop only: on mobile the sidebar is a
+           full-screen menu, not a rail, so collapsing is meaningless. -->
+      <div class="sidebar-footer d-none d-lg-block">
+        <button
+          type="button"
+          class="nav-link-item w-100 border-0 bg-transparent"
+          [attr.aria-expanded]="!collapsed()"
+          aria-controls="app-navigation"
+          (click)="toggleSidebar()"
+        >
+          <span
+            class="nav-icon"
+            [style.transform]="collapsed() ? 'rotate(180deg)' : 'none'"
+            style="transition: transform var(--dur-normal) var(--ease-out)"
+          >
+            <app-icon name="chevron-left" />
+          </span>
+          <span class="nav-label">Collapse menu</span>
+        </button>
+      </div>
+    </aside>
+
+    @if (mobileNavOpen()) {
+      <button
+        type="button"
+        class="nav-scrim d-lg-none"
+        aria-label="Close navigation menu"
+        (click)="closeMobileNav()"
+      ></button>
+    }
+
+    <!-- ======================================================== MAIN ==== -->
+    <div class="app-main">
+      <header class="app-header">
+        <button
+          type="button"
+          class="icon-btn d-lg-none"
+          aria-label="Open navigation menu"
+          aria-controls="app-navigation"
+          [attr.aria-expanded]="mobileNavOpen()"
+          (click)="toggleMobileNav()"
+        >
+          <app-icon name="menu" />
+        </button>
+
+        @if (authService.currentUser(); as user) {
+          <div class="header-greeting">
+            <span class="header-hello">{{ greeting() }}, {{ user.username }}</span>
+            <span class="header-context">
+              {{ roleLabel() }}@if (user.department?.name) { &middot; {{ user.department?.name }} }
+            </span>
+          </div>
+        }
+
+        <div class="header-actions">
+          <!-- Search reaches the pages that actually implement backend search;
+               it is a shortcut, not a second search engine. -->
+          <form class="header-search d-none d-md-block" role="search" (ngSubmit)="$event.preventDefault()">
+            <label class="sr-only" for="global-search">Search</label>
+            <app-icon name="search" class="search-icon" />
+            <input
+              id="global-search"
+              type="search"
+              class="form-control form-control-sm"
+              placeholder="Search…"
+              [attr.aria-label]="'Search'"
+            />
+          </form>
+
+          <!-- The Notification Centre: persistent, server-backed notifications.
+               Distinct from toasts, which are transient feedback on an action. -->
+          <app-notification-bell />
+
+          <button type="button" class="icon-btn" [attr.aria-label]="themeLabel()" (click)="cycleTheme()">
+            <app-icon [name]="themeIcon()" />
+          </button>
+
+          <!-- Profile menu. Every item performs a real action. -->
+          <div class="position-relative" data-profile-menu>
+            <button
+              type="button"
+              class="icon-btn"
+              style="width: auto; gap: 0.5rem; padding-inline: 0.25rem"
+              [attr.aria-expanded]="profileOpen()"
+              aria-haspopup="menu"
+              aria-label="Account menu"
+              (click)="toggleProfile(); $event.stopPropagation()"
+            >
+              <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+            </button>
+
+            @if (profileOpen()) {
+              <div
+                class="dropdown-menu show"
+                role="menu"
+                style="position: absolute; right: 0; top: calc(100% + 0.5rem); left: auto"
+              >
+                @if (authService.currentUser(); as user) {
+                  <div class="dropdown-header">
+                    {{ user.username }} &middot; {{ user.role }}
+                  </div>
+                }
+                <a routerLink="/profile" class="dropdown-item" role="menuitem">
+                  <app-icon name="user" style="width: 1rem; height: 1rem" />
+                  Profile
+                </a>
+                <a routerLink="/profile/password" class="dropdown-item" role="menuitem">
+                  <app-icon name="key" style="width: 1rem; height: 1rem" />
+                  Change Password
+                </a>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" role="menuitem" (click)="logout()">
+                  <app-icon name="logout" style="width: 1rem; height: 1rem" />
+                  Logout
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content" id="main-content" tabindex="-1">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+} @else {
+  <!-- Signed out: login and register render on their own. -->
+  <router-outlet />
+}
+
+<app-toast-container />

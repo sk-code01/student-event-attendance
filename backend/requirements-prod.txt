@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# Production WSGI server. Not installable-and-runnable on Windows (gunicorn
+# needs POSIX fcntl), which is why it is here rather than in requirements.txt:
+# local development on any OS uses `manage.py runserver`, and only the Linux
+# deployment host installs this file. See docs/deployment/deployment-guide.md.
+gunicorn==23.0.0

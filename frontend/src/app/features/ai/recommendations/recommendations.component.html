@@ -1,0 +1,90 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Recommended events</h1>
+    <p class="page-subtitle">Events open for registration, ranked by how they relate to what you have engaged with before.</p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/student/events" class="btn btn-outline-secondary btn-sm">All events</a>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="load()">Refresh</button>
+  </div>
+</div>
+
+<app-ai-disclaimer [text]="response()?.disclaimer" />
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading recommendations&hellip;</span>
+} @else if (response(); as data) {
+  @if (!data.available) {
+    <div class="alert alert-warning" role="alert">
+      <strong>Recommendations unavailable.</strong> {{ unavailableMessage(data) }}
+    </div>
+  } @else if (data.results.length === 0) {
+    <div class="alert alert-secondary" role="status">
+      {{ unavailableMessage(data) }}
+    </div>
+  } @else {
+    @if (data.model === 'cold_start') {
+      <div class="alert alert-info" role="status">
+        <strong>Getting started.</strong> You have no participation history yet, so this list is a
+        simple, documented ranking (your department, current popularity, how soon the event is) rather
+        than a personalised model output. It will become personalised as you take part in events.
+      </div>
+    } @else {
+      <p class="text-muted small">
+        Based on {{ data.history_size }} event{{ data.history_size === 1 ? '' : 's' }} you have engaged with,
+        out of {{ data.candidate_count }} open event{{ data.candidate_count === 1 ? '' : 's' }}.
+      </p>
+    }
+
+    <div class="list-group mb-3">
+      @for (rec of data.results; track rec.event_id; let i = $index) {
+        <a [routerLink]="['/student/events', rec.event_id]" class="list-group-item list-group-item-action py-3">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div>
+              <div class="fw-semibold rec-title">{{ i + 1 }}. {{ rec.event.title }}</div>
+              <div class="small text-muted">
+                {{ rec.event.category || 'Uncategorised' }}
+                &middot; {{ rec.event.event_date | date: 'mediumDate' }}
+                &middot; {{ rec.event.venue }}
+                @if (rec.event.department) {
+                  &middot; {{ rec.event.department }}
+                }
+              </div>
+              <div class="small text-muted">
+                Registration closes {{ rec.event.registration_end_date | date: 'mediumDate' }}
+              </div>
+              @if (rec.reasons.length > 0) {
+                <ul class="small mb-0 mt-1 ps-3">
+                  @for (reason of rec.reasons; track reason) {
+                    <li>{{ reason }}</li>
+                  }
+                </ul>
+              }
+            </div>
+            <div class="text-end flex-shrink-0">
+              <div class="small text-muted">{{ data.model === 'knn' ? 'similarity' : 'rank score' }}</div>
+              <div class="fw-semibold">{{ rec.score | number: '1.2-2' }}</div>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+
+    @if (data.score_basis) {
+      <p class="text-muted small mb-1"><strong>Score basis:</strong> {{ data.score_basis }}</p>
+    }
+    <p class="text-muted small">
+      Model: {{ data.model }} ({{ data.model_version }}) &middot; features {{ data.feature_version }}
+      &middot; computed in {{ data.inference_ms | number: '1.0-0' }} ms
+    </p>
+  }
+}

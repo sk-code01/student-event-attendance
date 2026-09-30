@@ -1,0 +1,508 @@
+/* =========================================================================
+   SEAMS-AI — Component layer
+
+   These rules re-skin the Bootstrap classes the existing templates already
+   use (.card, .btn, .table, .form-control, .badge, .alert, .list-group,
+   .modal, .dropdown, .pagination, .nav).
+
+   That is deliberate and is the core of this redesign's safety: every page
+   inherits the new design system WITHOUT its markup or its bindings being
+   touched, so no business logic moves. Where a page needs genuinely new
+   structure it gets new classes (below), but nothing is rewritten merely to
+   restyle it.
+   ========================================================================= */
+
+/* =============================================================== CARDS === */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--card-elevation);
+  color: var(--text-1);
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-normal) var(--ease-out),
+              transform var(--dur-normal) var(--ease-out);
+}
+
+/* No blur here on purpose. Cards are opaque, so there is nothing behind one
+   to sample — and a backdrop-filter would still put every card on the page on
+   its own compositing layer. Glass is opted into by `.glass` and
+   `.surface-glass`, which declare the filter themselves. */
+
+/* A card is lit from above: a single hairline of light along its top edge.
+   On navy this is what separates it from the page — a black drop shadow has
+   nothing to fall against. */
+.card {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.03) 0%, transparent 40%),
+    var(--card-bg);
+}
+
+.card-header,
+.card-footer {
+  background: color-mix(in oklab, var(--surface-2) 55%, transparent);
+  border-color: var(--border-subtle);
+  color: var(--text-1);
+  font-weight: var(--weight-semibold);
+}
+.card-header:first-child { border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.card-footer:last-child  { border-radius: 0 0 var(--radius-card) var(--radius-card); }
+
+.card-body { padding: var(--card-pad); }
+.card-title { font-size: var(--text-md); margin-bottom: var(--space-2); }
+.card-subtitle, .card-text { color: var(--text-2); }
+
+/* An interactive card lifts and lights up, for everyone. This used to be
+   branched per role — students lifted, other roles did not, and a stale
+   `[data-role='HOD']` selector meant Event Coordinators matched nothing at
+   all. Requirement 16 makes that branching wrong on purpose: the same control
+   behaves the same way whoever is looking at it. Anchors are cards too on the
+   dashboard, hence the `:is()`. */
+:is(a, .is-interactive).card:hover,
+:is(a, .is-interactive).card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg), var(--glow-strong);
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--card-border));
+}
+
+/* Bootstrap border-utility variants used by the dashboard cards. */
+.border-primary-subtle   { border-color: color-mix(in oklab, var(--accent) 34%, var(--border)) !important; }
+.border-secondary-subtle { border-color: var(--border) !important; }
+.border-success-subtle   { border-color: color-mix(in oklab, var(--success) 34%, var(--border)) !important; }
+.border-warning-subtle   { border-color: color-mix(in oklab, var(--warning) 40%, var(--border)) !important; }
+.border-warning          { border-color: color-mix(in oklab, var(--warning) 62%, var(--border)) !important; }
+.border-primary          { border-color: color-mix(in oklab, var(--accent) 62%, var(--border)) !important; }
+
+/* ============================================================= BUTTONS === */
+
+.btn {
+  --btn-bg: transparent;
+  --btn-fg: var(--text-1);
+  --btn-border: transparent;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.5rem 1rem;
+  min-height: 2.375rem;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: 1.2;
+  /* A button label broken across lines reads as two words ("Deactiv ate"),
+     so labels never wrap — a crowded row wraps the buttons instead. */
+  white-space: nowrap;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  transition: background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              transform var(--dur-instant) var(--ease-out);
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled, .btn.disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+.btn-sm { padding: 0.3125rem 0.6875rem; min-height: 2rem; font-size: var(--text-sm); }
+.btn-lg { padding: 0.6875rem 1.375rem; min-height: 2.875rem; font-size: var(--text-md); }
+
+/* Primary — the brand gradient, purple into electric blue (requirement 3).
+   `--btn-bg` stays set so every rule that overrides a button's background by
+   token still works; the gradient layers on top of it, and a browser that
+   cannot paint the gradient falls back to the solid accent underneath. */
+.btn-primary {
+  --btn-bg: var(--accent);
+  --btn-fg: var(--accent-contrast);
+  --btn-border: color-mix(in oklab, var(--accent) 70%, var(--accent-2));
+  font-weight: var(--weight-semibold);
+  background-image: var(--gradient-brand);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.22),
+    0 2px 10px -4px color-mix(in oklab, var(--accent) 80%, transparent);
+}
+.btn-primary:hover:not(:disabled) {
+  --btn-bg: color-mix(in oklab, var(--accent) 86%, var(--text-1));
+  filter: saturate(1.12) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+    0 0 22px -6px color-mix(in oklab, var(--accent) 85%, transparent);
+}
+
+.btn-secondary,
+.btn-outline-secondary {
+  --btn-bg: transparent;
+  --btn-fg: var(--text-1);
+  --btn-border: var(--border-strong);
+}
+.btn-secondary:hover:not(:disabled),
+.btn-outline-secondary:hover:not(:disabled) {
+  --btn-bg: var(--surface-3);
+  --btn-fg: var(--text-1);
+  --btn-border: var(--text-3);
+}
+
+.btn-outline-primary {
+  --btn-bg: transparent;
+  --btn-fg: var(--accent);
+  --btn-border: color-mix(in oklab, var(--accent) 55%, var(--border));
+}
+.btn-outline-primary:hover:not(:disabled) {
+  --btn-bg: var(--accent-soft);
+  --btn-fg: var(--accent);
+  --btn-border: var(--accent);
+}
+
+.btn-danger {
+  --btn-bg: var(--c-red-600);
+  --btn-fg: #fff;
+  --btn-border: var(--c-red-600);
+  font-weight: var(--weight-semibold);
+}
+.btn-danger:hover:not(:disabled) { --btn-bg: var(--c-red-700); --btn-border: var(--c-red-700); }
+
+.btn-outline-danger {
+  --btn-fg: var(--danger);
+  --btn-border: color-mix(in oklab, var(--danger) 55%, var(--border));
+}
+.btn-outline-danger:hover:not(:disabled) { --btn-bg: var(--danger-bg); --btn-fg: var(--danger); }
+
+.btn-success, .btn-outline-success {
+  --btn-fg: var(--success);
+  --btn-border: color-mix(in oklab, var(--success) 55%, var(--border));
+}
+.btn-success { --btn-bg: var(--c-green-600); --btn-fg: #fff; --btn-border: var(--c-green-600); }
+.btn-success:hover:not(:disabled) { --btn-bg: var(--c-green-700); --btn-border: var(--c-green-700); }
+.btn-outline-success:hover:not(:disabled) { --btn-bg: var(--success-bg); }
+
+.btn-outline-warning { --btn-fg: var(--warning); --btn-border: color-mix(in oklab, var(--warning) 55%, var(--border)); }
+.btn-outline-warning:hover:not(:disabled) { --btn-bg: var(--warning-bg); --btn-fg: var(--warning); }
+
+.btn-outline-dark { --btn-fg: var(--text-1); --btn-border: var(--border-strong); }
+.btn-outline-dark:hover:not(:disabled) { --btn-bg: var(--surface-3); }
+
+.btn-outline-light { --btn-fg: var(--text-1); --btn-border: var(--border); }
+.btn-outline-light:hover:not(:disabled) { --btn-bg: var(--surface-3); }
+
+.btn-link {
+  --btn-fg: var(--accent);
+  --btn-border: transparent;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  min-height: auto;
+  padding: 0.125rem 0.25rem;
+}
+.btn-link:hover:not(:disabled) { --btn-fg: color-mix(in oklab, var(--accent) 78%, var(--text-1)); }
+
+.btn-group > .btn { border-radius: 0; }
+.btn-group > .btn:first-child { border-radius: var(--radius-control) 0 0 var(--radius-control); }
+.btn-group > .btn:last-child  { border-radius: 0 var(--radius-control) var(--radius-control) 0; }
+.btn-group > .btn:only-child  { border-radius: var(--radius-control); }
+.btn-group > .btn + .btn { margin-left: -1px; }
+.btn-group > .btn:hover, .btn-group > .btn:focus-visible { z-index: 2; }
+
+.btn-close {
+  border-radius: var(--radius-control);
+  opacity: 0.6;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.btn-close:hover { opacity: 1; }
+[data-theme='dark'] .btn-close { filter: invert(1) grayscale(100%) brightness(1.7); }
+
+/* =============================================================== FORMS === */
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-2);
+  margin-bottom: var(--space-1);
+  letter-spacing: var(--label-tracking, var(--tracking-normal));
+}
+
+.form-control,
+.form-select {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  color: var(--text-1);
+  font-size: var(--text-base);
+  padding: 0.5rem 0.75rem;
+  min-height: 2.375rem;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              background-color var(--dur-fast) var(--ease-out);
+}
+.form-control::placeholder { color: var(--text-3); opacity: 1; }
+
+/* The focus ring glows rather than just outlining. It is the same accent as
+   everything else, at the same width everywhere, so focus is one learnable
+   signal across the product (requirement 32). */
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--surface-1);
+  border-color: var(--accent);
+  color: var(--text-1);
+  box-shadow: 0 0 0 var(--focus-ring-width)
+              color-mix(in oklab, var(--accent) 22%, transparent);
+  outline: none;
+}
+.form-control:disabled,
+.form-select:disabled { background-color: var(--surface-3); opacity: 0.7; cursor: not-allowed; }
+
+.form-control-sm, .form-select-sm { min-height: 2rem; padding: 0.3125rem 0.625rem; font-size: var(--text-sm); }
+
+[data-theme='dark'] .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a7b4ca' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Validation: colour PLUS an icon-free text message (.invalid-feedback is
+   already in the markup), never colour alone. */
+.form-control.is-invalid,
+.form-select.is-invalid,
+.was-validated .form-control:invalid {
+  border-color: var(--danger);
+  background-image: none;
+  padding-right: 0.75rem;
+}
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  box-shadow: 0 0 0 var(--focus-ring-width) color-mix(in oklab, var(--danger) 22%, transparent);
+}
+.invalid-feedback { color: var(--danger); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.form-text { color: var(--text-3); font-size: var(--text-sm); }
+
+/* Same reasoning as the text fields: an unchecked box is its border. */
+.form-check-input {
+  border-color: var(--border-control);
+  background-color: var(--surface-1);
+  cursor: pointer;
+}
+.form-check-input:checked { background-color: var(--accent); border-color: var(--accent); }
+.form-check-input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 var(--focus-ring-width) color-mix(in oklab, var(--accent) 25%, transparent);
+}
+.form-check-label { color: var(--text-1); }
+
+.input-group-text {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+  color: var(--text-2);
+  border-radius: var(--radius-control);
+}
+
+/* A required marker that does not rely on colour alone — the asterisk itself
+   carries the meaning and is announced via the label text. */
+.form-label .req,
+.required-mark { color: var(--danger); font-weight: var(--weight-bold); margin-left: 0.15em; }
+
+/* ============================================================== TABLES === */
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--text-1);
+  color: var(--text-1);
+  border-color: var(--border);
+  margin-bottom: 0;
+  font-size: var(--text-base);
+}
+
+.table > thead > tr > th {
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-strong);
+  padding: 0.6875rem 0.875rem;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table > tbody > tr > td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  color: var(--text-1);
+}
+.table > tbody > tr:last-child > td { border-bottom: 0; }
+
+.table > tbody > tr { transition: background-color var(--dur-fast) var(--ease-out); }
+.table > tbody > tr:hover { background: var(--accent-soft); }
+
+/* Sticky headers on long tables: the header stays legible while the body
+   scrolls, which matters most on the attendance and registration lists where
+   a reader is many rows from the top. */
+.table > thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Opaque rather than blurred: a header cell is repeated dozens of times per
+     table, and a backdrop-filter on each one would put every table on its own
+     compositing layer for no visible gain. */
+  background: var(--surface-2);
+}
+
+.table-sm > :not(caption) > * > * { padding: 0.5rem 0.625rem; }
+.table-light, .table-light > * > * { background: var(--surface-2) !important; color: var(--text-2) !important; }
+
+.table caption {
+  caption-side: bottom;
+  padding-top: var(--space-3);
+  color: var(--text-3);
+  font-size: var(--text-sm);
+}
+
+/* Wide tables scroll INSIDE this container. The page itself never scrolls
+   sideways — that is the rule the brief sets, and this is where it is kept. */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  scrollbar-width: thin;
+}
+.card > .table-responsive { border: 0; border-radius: 0; background: transparent; }
+
+/* =========================================================== BADGES ====== */
+
+/* Status is colour + TEXT. The label is always present in the markup; the
+   colour is a second, redundant channel — never the only one. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.3em 0.65em;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.text-bg-primary   { background: var(--accent-soft) !important; color: var(--accent) !important; border-color: color-mix(in oklab, var(--accent) 30%, transparent); }
+.text-bg-secondary { background: var(--neutral-bg) !important; color: var(--neutral) !important; border-color: color-mix(in oklab, var(--neutral) 26%, transparent); }
+.text-bg-success   { background: var(--success-bg) !important; color: var(--success) !important; border-color: color-mix(in oklab, var(--success) 30%, transparent); }
+.text-bg-warning   { background: var(--warning-bg) !important; color: var(--warning) !important; border-color: color-mix(in oklab, var(--warning) 34%, transparent); }
+.text-bg-danger    { background: var(--danger-bg) !important;  color: var(--danger) !important;  border-color: color-mix(in oklab, var(--danger) 30%, transparent); }
+.text-bg-info      { background: var(--info-bg) !important;    color: var(--info) !important;    border-color: color-mix(in oklab, var(--info) 30%, transparent); }
+.text-bg-light     { background: var(--surface-3) !important;  color: var(--text-2) !important;  border-color: var(--border); }
+.text-bg-dark      { background: color-mix(in oklab, var(--text-1) 88%, transparent) !important; color: var(--surface-1) !important; }
+
+/* =========================================================== ALERTS ====== */
+
+.alert {
+  border-radius: var(--radius-card);
+  border: 1px solid transparent;
+  border-left-width: 3px;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  margin-bottom: var(--space-4);
+}
+.alert-danger  { background: var(--danger-bg);  color: var(--danger);  border-color: color-mix(in oklab, var(--danger) 34%, transparent);  border-left-color: var(--danger); }
+.alert-success { background: var(--success-bg); color: var(--success); border-color: color-mix(in oklab, var(--success) 34%, transparent); border-left-color: var(--success); }
+.alert-warning { background: var(--warning-bg); color: var(--warning); border-color: color-mix(in oklab, var(--warning) 34%, transparent); border-left-color: var(--warning); }
+.alert-info    { background: var(--info-bg);    color: var(--info);    border-color: color-mix(in oklab, var(--info) 34%, transparent);    border-left-color: var(--info); }
+.alert-secondary { background: var(--surface-3); color: var(--text-2); border-color: var(--border); border-left-color: var(--border-strong); }
+
+/* ======================================================== LIST GROUP ===== */
+
+.list-group { border-radius: var(--radius-card); }
+.list-group-item {
+  background: var(--surface-1);
+  border-color: var(--border-subtle);
+  color: var(--text-1);
+  padding: var(--space-3) var(--space-4);
+}
+.list-group-item:first-child { border-top-left-radius: var(--radius-card); border-top-right-radius: var(--radius-card); }
+.list-group-item:last-child  { border-bottom-left-radius: var(--radius-card); border-bottom-right-radius: var(--radius-card); }
+.list-group-flush > .list-group-item { border-left: 0; border-right: 0; border-radius: 0; }
+.list-group-item.bg-light,
+.list-group-item-action:hover { background: var(--surface-2); }
+
+/* ============================================================ MODALS ===== */
+
+.modal-content {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-xl);
+  color: var(--text-1);
+}
+.modal-header, .modal-footer { border-color: var(--border-subtle); padding: var(--space-4) var(--card-pad); }
+.modal-body { padding: var(--card-pad); }
+.modal-title { font-size: var(--text-lg); }
+.modal-backdrop { background: var(--scrim); }
+.modal-backdrop.show { opacity: 1; }
+
+/* ========================================================== DROPDOWNS ==== */
+
+.dropdown-menu {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1);
+  color: var(--text-1);
+  min-width: 11rem;
+}
+.dropdown-item {
+  border-radius: var(--radius-control);
+  color: var(--text-1);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--text-base);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.dropdown-item:hover, .dropdown-item:focus-visible { background: var(--accent-soft); color: var(--accent); }
+.dropdown-divider { border-color: var(--border-subtle); margin: var(--space-1) 0; }
+.dropdown-header { color: var(--text-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--tracking-caps); padding: 0.5rem 0.75rem 0.25rem; }
+
+/* ========================================================= PAGINATION ==== */
+
+.pagination { gap: var(--space-1); margin-bottom: 0; }
+.page-link {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control) !important;
+  color: var(--text-1);
+  font-size: var(--text-sm);
+  padding: 0.375rem 0.75rem;
+  transition: var(--transition-colors);
+}
+.page-link:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.page-item.disabled .page-link { background: var(--surface-2); color: var(--text-3); border-color: var(--border-subtle); opacity: 0.75; }
+.page-item.active .page-link { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+
+/* ======================================================= TEXT UTILITIES == */
+
+.text-muted { color: var(--text-3) !important; }
+.text-body   { color: var(--text-1) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-success{ color: var(--success) !important; }
+.text-warning{ color: var(--warning) !important; }
+.text-primary{ color: var(--accent) !important; }
+.bg-light    { background: var(--surface-2) !important; }
+.bg-body     { background: var(--surface-1) !important; }
+.border      { border-color: var(--border) !important; }
+.border-top, .border-bottom, .border-start, .border-end { border-color: var(--border) !important; }
+
+/* Bootstrap's .shadow-sm is used across existing cards; map it to the token
+   scale so elevation stays consistent with the rest of the system. */
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow    { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+
+/* ========================================================== SPINNERS ===== */
+
+.spinner-border { border-width: 0.16em; color: currentColor; }
+.spinner-border-sm { width: 0.95rem; height: 0.95rem; }

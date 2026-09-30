@@ -1,0 +1,184 @@
+<a routerLink="/event-coordinator" class="back-link">&larr; Back to Department Command</a>
+
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Student tracking</h1>
+    <p class="page-subtitle">
+      Every registered student in your department, and where they stand at each stage.
+    </p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/reports" class="btn btn-outline-primary btn-sm">Export a report</a>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+<div class="filter-bar">
+  <div class="toolbar-field" style="flex: 2 1 16rem;">
+    <label class="toolbar-label" for="track-search">Search</label>
+    <input
+      id="track-search"
+      type="search"
+      class="form-control form-control-sm"
+      placeholder="Name, username or registration number"
+      [(ngModel)]="filters.search"
+      (keyup.enter)="load()"
+    />
+  </div>
+
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="track-event">Event</label>
+    <select id="track-event" class="form-select form-select-sm" [(ngModel)]="filters.event">
+      <option [ngValue]="null">All events</option>
+      @for (event of events(); track event.id) {
+        <option [ngValue]="event.id">{{ event.title }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="track-capture">Live capture</label>
+    <select id="track-capture" class="form-select form-select-sm" [(ngModel)]="filters.live_capture_status">
+      @for (option of liveCaptureOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="track-certificate">Certificate</label>
+    <select id="track-certificate" class="form-select form-select-sm" [(ngModel)]="filters.certificate_status">
+      @for (option of certificateOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="track-attendance">Attendance</label>
+    <select id="track-attendance" class="form-select form-select-sm" [(ngModel)]="filters.attendance_status">
+      @for (option of attendanceOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="toolbar-actions">
+    <button type="button" class="btn btn-sm btn-primary" (click)="load()">Apply</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">Clear</button>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="table-card" aria-hidden="true">
+    <div class="p-3">
+      @for (slot of [0, 1, 2, 3, 4]; track slot) {
+        <span class="skeleton skeleton-text"></span>
+      }
+    </div>
+  </div>
+  <span class="sr-only" role="status">Loading the tracking view&hellip;</span>
+} @else if (rows().length === 0) {
+  <app-empty-state
+    title="Nothing matches these filters"
+    message="No registration in your department matches this combination. Clear a filter to see more."
+    icon="search"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-sm table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Registration no.</th>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">Live capture</th>
+            <th scope="col">Captured location</th>
+            <th scope="col">Verification</th>
+            <th scope="col">Certificate</th>
+            <th scope="col">Attendance</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.registration_id) {
+            <tr>
+              <td data-label="Student">
+                <span class="table-cell-value">
+                  {{ displayName(row) }}
+                  <span class="d-block small text-muted">{{ row.student.username }}</span>
+                </span>
+              </td>
+              <td data-label="Registration no.">
+                <span class="table-cell-value small">{{ row.student.university_registration_number || '—' }}</span>
+              </td>
+              <td data-label="Event"><span class="table-cell-value">{{ row.event.title }}</span></td>
+              <td data-label="Event date">
+                <span class="table-cell-value small text-muted">{{ row.event.event_date | date: 'mediumDate' }}</span>
+              </td>
+
+              <td data-label="Live capture">
+                <span class="badge" [ngClass]="liveCaptureClass(row)">{{ liveCaptureLabel(row) }}</span>
+              </td>
+
+              <td data-label="Captured location">
+                <span class="table-cell-value small text-muted">{{ row.live_capture_location || '—' }}</span>
+              </td>
+
+              <td data-label="Verification">
+                <span class="table-cell-value small">{{ row.verification_status }}</span>
+              </td>
+
+              <td data-label="Certificate">
+                <span class="badge" [ngClass]="certificateClass(row)">{{ row.certificate_status }}</span>
+                @if (row.certificate_attempts_used > 0) {
+                  <span class="d-block small text-muted">
+                    {{ row.certificate_attempts_used }} of
+                    {{ row.certificate_attempts_used + row.certificate_attempts_remaining }} attempts
+                  </span>
+                }
+              </td>
+
+              <td data-label="Attendance">
+                <span class="badge" [ngClass]="attendanceClass(row)">{{ row.attendance_status }}</span>
+                @if (row.attendance_is_manual) {
+                  <span class="d-block small text-muted">
+                    Marked by {{ row.attendance_decided_by ?? 'coordinator' }}
+                  </span>
+                }
+              </td>
+
+              <td>
+                <!-- Attendance is always an explicit decision: nothing here is
+                     inferred from the capture or the registration. -->
+                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success"
+                    [disabled]="markingId() === row.registration_id"
+                    (click)="markAttendance(row, 'APPROVED')"
+                  >
+                    Mark present<span class="sr-only"> for {{ displayName(row) }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    [disabled]="markingId() === row.registration_id"
+                    (click)="markAttendance(row, 'REJECTED')"
+                  >
+                    Mark absent<span class="sr-only"> for {{ displayName(row) }}</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

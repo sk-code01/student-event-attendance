@@ -1,0 +1,350 @@
+/* =========================================================================
+   SEAMS-AI — Design tokens
+   Student Event & Attendance Management System with AI
+
+   One source of truth for every colour, size, radius, shadow and duration in
+   the application. Components read tokens; they never hard-code a value.
+
+   Three layers, in this order:
+
+     1. Primitive scale   --c-slate-700, --space-4, --text-lg ...
+     2. Semantic role     --bg, --surface-1, --text-1, --border ...
+     3. Role accent       --accent, --accent-2 ... set per role by _roles.css
+
+   Light and dark are the SAME semantic names with different values, so a
+   component is written once and works in both. That is why nothing below
+   this file ever needs a `@media (prefers-color-scheme)` of its own.
+   ========================================================================= */
+
+:root {
+  /* ---------------------------------------------------------------- colour
+     A single neutral ramp plus the accent families the four roles draw from.
+     Stated as raw values here; the semantic layer maps them per theme. */
+
+  --c-white: #ffffff;
+  --c-black: #000000;
+
+  /* --- Navy: the ground the whole product stands on ---------------------
+     A dedicated ramp rather than a generic slate, because the identity is
+     specifically navy: the darks carry a blue cast at every step, which is
+     what stops the dark theme reading as plain grey. */
+  --c-navy-25:  #f5f7fc;
+  --c-navy-50:  #eef2fa;
+  --c-navy-100: #e0e7f5;
+  --c-navy-200: #c6d2e9;
+  --c-navy-300: #9fb1d4;
+  --c-navy-400: #6d83b0;
+  /* A half-step, added specifically so control borders clear 3:1 on the dark
+     ground: navy-500 measures 2.7:1 there and navy-400 is heavier than the
+     design wants. */
+  --c-navy-450: #5a6d9c;
+  --c-navy-500: #47598a;
+  --c-navy-600: #32446f;
+  --c-navy-700: #243456;
+  --c-navy-800: #18243d;
+  --c-navy-850: #121c31;
+  --c-navy-900: #0d1426;
+  --c-navy-950: #070b16;
+
+  /* --- Purple: the primary accent -------------------------------------- */
+  --c-purple-200: #ddd6ff;
+  --c-purple-300: #c3b5fd;
+  --c-purple-400: #a78bfa;
+  --c-purple-500: #8b5cf6;
+  --c-purple-600: #7c3aed;
+  --c-purple-700: #6d28d9;
+
+  /* --- Electric blue: the secondary accent ------------------------------ */
+  --c-electric-200: #bae6fd;
+  --c-electric-300: #7dd3fc;
+  --c-electric-400: #38bdf8;
+  --c-electric-500: #0ea5e9;
+  --c-electric-600: #0284c7;
+  --c-electric-700: #0369a1;
+
+  /* Kept because status and chart colours reference them. */
+  --c-blue-300:   #93c5fd;
+  --c-blue-400:   #60a5fa;
+  --c-blue-500:   #3b82f6;
+  --c-blue-600:   #2563eb;
+
+  --c-cyan-400:   #22d3ee;
+  --c-cyan-500:   #06b6d4;
+
+  /* Semantic hues. These never change with theme or role — a rejection is
+     the same red for everybody, which is what makes status readable at a
+     glance. */
+  --c-green-400: #4ade80;
+  --c-green-500: #22c55e;
+  --c-green-600: #16a34a;
+  --c-green-700: #15803d;
+
+  --c-amber-400: #fbbf24;
+  --c-amber-500: #f59e0b;
+  --c-amber-600: #d97706;
+  --c-amber-700: #b45309;
+
+  --c-red-400:   #f87171;
+  --c-red-500:   #ef4444;
+  --c-red-600:   #dc2626;
+  --c-red-700:   #b91c1c;
+
+  --c-sky-400:   #38bdf8;
+  --c-sky-500:   #0ea5e9;
+  --c-sky-600:   #0284c7;
+
+  /* Legacy aliases. A handful of component rules still name the slate ramp;
+     pointing them at the navy ramp keeps one source of truth rather than two
+     neutral scales drifting apart. */
+  --c-slate-25:  var(--c-navy-25);
+  --c-slate-50:  var(--c-navy-50);
+  --c-slate-100: var(--c-navy-100);
+  --c-slate-200: var(--c-navy-200);
+  --c-slate-300: var(--c-navy-300);
+  --c-slate-400: var(--c-navy-400);
+  --c-slate-500: var(--c-navy-500);
+  --c-slate-600: var(--c-navy-600);
+  --c-slate-700: var(--c-navy-700);
+  --c-slate-800: var(--c-navy-800);
+  --c-slate-900: var(--c-navy-900);
+  --c-slate-950: var(--c-navy-950);
+
+  /* ------------------------------------------------------------ typography
+     One family across all four roles — the roles differ in weight, size and
+     letter-spacing, not in typeface, so the product still reads as one
+     application. The stacks are system fonts: nothing is downloaded, so
+     there is no layout shift and no external request. */
+
+  /* Two families, each doing the job it is good at (requirement 6).
+     `--font-display` is geometric and a little technical: it carries headings,
+     metrics and anything that should read as "this is a system". `--font-sans`
+     is optimised for small sizes and long text, so tables, forms and body copy
+     stay comfortable. Both fall back to the system stack, so a failed or
+     blocked webfont degrades to something correct rather than to Times. */
+  --font-display: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto,
+                  'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+               Arial, 'Noto Sans', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+               'Liberation Mono', monospace;
+
+  /* Fluid type. clamp() means the scale adapts continuously between 320px
+     and 1600px rather than jumping at breakpoints — the reason the app reads
+     correctly on a 320px phone and a 2560px monitor without separate rules. */
+  --text-2xs:  0.6875rem;                                   /* 11px  */
+  --text-xs:   0.75rem;                                     /* 12px  */
+  --text-sm:   0.8125rem;                                   /* 13px  */
+  --text-base: clamp(0.875rem, 0.85rem + 0.12vw, 0.9375rem);
+  --text-md:   clamp(0.9375rem, 0.9rem + 0.18vw, 1.0625rem);
+  --text-lg:   clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-xl:   clamp(1.25rem, 1.12rem + 0.55vw, 1.625rem);
+  --text-2xl:  clamp(1.5rem, 1.28rem + 0.95vw, 2.125rem);
+  --text-3xl:  clamp(1.875rem, 1.5rem + 1.6vw, 2.75rem);
+
+  --leading-tight:  1.2;
+  --leading-snug:   1.35;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  --tracking-tight:  -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;
+  --tracking-caps:   0.08em;
+
+  /* --------------------------------------------------------------- spacing
+     A 4px base. Page padding and section gaps are fluid so density adapts
+     with the viewport instead of leaving a phone cramped or a monitor bare. */
+
+  --space-0:  0;
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --page-pad-x: clamp(1rem, 0.6rem + 1.8vw, 2.5rem);
+  --page-pad-y: clamp(1.25rem, 1rem + 1.2vw, 2.25rem);
+  --grid-gap:   clamp(0.875rem, 0.7rem + 0.7vw, 1.5rem);
+  --card-pad:   clamp(1rem, 0.85rem + 0.6vw, 1.5rem);
+
+  /* ---------------------------------------------------------------- radius
+     Roles override --radius-card and --radius-control to shift personality
+     from sharp (Admin) through to soft (Student). */
+
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+  --radius-pill: 999px;
+
+  --radius-card:    var(--radius-lg);
+  --radius-control: var(--radius-md);
+
+  /* --------------------------------------------------------------- shadows */
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(15 23 42 / 0.07), 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08), 0 2px 4px rgb(15 23 42 / 0.04);
+  --shadow-lg: 0 12px 28px rgb(15 23 42 / 0.10), 0 4px 10px rgb(15 23 42 / 0.05);
+  --shadow-xl: 0 24px 48px rgb(15 23 42 / 0.14), 0 8px 16px rgb(15 23 42 / 0.06);
+
+  /* ------------------------------------------------------------ transitions
+     Every duration is routed through these so `prefers-reduced-motion` can
+     zero all of them in one place (see _base.css). */
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --dur-instant: 80ms;
+  --dur-fast:    140ms;
+  --dur-normal:  220ms;
+  --dur-slow:    360ms;
+
+  --transition-colors: color var(--dur-fast) var(--ease-out),
+                       background-color var(--dur-fast) var(--ease-out),
+                       border-color var(--dur-fast) var(--ease-out);
+
+  /* ---------------------------------------------------------------- layers
+     Named so no component invents a magic z-index and ends up underneath a
+     modal it was meant to sit above. */
+
+  --z-base:      0;
+  --z-aurora:   -1;
+  --z-sticky:   100;
+  --z-sidebar:  200;
+  --z-header:   210;
+  --z-dropdown: 300;
+  --z-backdrop: 400;
+  --z-modal:    410;
+  --z-toast:    500;
+
+  /* ------------------------------------------------------------------ misc */
+  --sidebar-w:           264px;
+  --sidebar-w-collapsed: 72px;
+  --header-h:            60px;
+  --focus-ring-width:    3px;
+  --content-max:         1680px;
+}
+
+/* =========================================================================
+   LIGHT THEME (default)
+   ========================================================================= */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg:             var(--c-navy-50);
+  --surface-1:      var(--c-white);
+  --surface-2:      var(--c-navy-25);
+  --surface-3:      var(--c-navy-100);
+  --surface-sunken: var(--c-navy-100);
+  --surface-raised: var(--c-white);
+
+  --text-1: var(--c-navy-900);
+  --text-2: var(--c-navy-600);
+  --text-3: var(--c-navy-500);
+  --text-on-accent: var(--c-white);
+
+  --border:        var(--c-navy-200);
+  --border-strong: var(--c-navy-300);
+  --border-subtle: var(--c-navy-100);
+  /* The edge of an interactive control, which has to carry 3:1 on its own.
+     Deliberately darker than `--border`: a divider and a control boundary are
+     different jobs with different requirements. */
+  --border-control: var(--c-navy-400);
+
+  --success: var(--c-green-700);
+  --success-bg: #dcfce7;
+  --warning: var(--c-amber-700);
+  --warning-bg: #fef3c7;
+  --danger:  var(--c-red-700);
+  --danger-bg: #fee2e2;
+  --info:    var(--c-electric-700);
+  --info-bg: #e0f2fe;
+  --neutral: var(--c-navy-600);
+  --neutral-bg: var(--c-navy-100);
+
+  --glass-bg:     rgb(255 255 255 / 0.74);
+  --glass-border: rgb(255 255 255 / 0.9);
+  --glass-blur:   14px;
+
+  --aurora-opacity: 0.38;
+  --scrim: rgb(13 20 38 / 0.42);
+
+  --shadow-color: 24 36 61;
+  /* Light elevation is honest shadow: there is nothing to glow against. */
+  --glow-accent: 0 0 0 1px rgb(124 58 237 / 0.18);
+  --glow-strong: 0 8px 30px -12px rgb(124 58 237 / 0.45);
+}
+
+/* =========================================================================
+   DARK THEME — the default (requirement 4)
+   Not an inversion of light, and not black. Surfaces are lifted step by step
+   out of a deep navy so elevation still reads, and depth comes from the
+   combination of surface contrast, a hairline border and a little glow
+   rather than from heavy black shadow, which simply disappears on a dark
+   ground.
+   ========================================================================= */
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg:             var(--c-navy-950);
+  --surface-1:      var(--c-navy-900);
+  --surface-2:      var(--c-navy-850);
+  --surface-3:      var(--c-navy-800);
+  --surface-sunken: #05080f;
+  --surface-raised: #1b2740;
+
+  --text-1: #eaf0fb;
+  --text-2: #a8b6d1;
+  --text-3: #7d8bab;
+  --text-on-accent: #ffffff;
+
+  --border:        #22304d;
+  --border-strong: #35476d;
+  --border-subtle: #18233c;
+  --border-control: var(--c-navy-450);
+
+  --success: #6ee7a8;
+  --success-bg: rgb(34 197 94 / 0.16);
+  --warning: #fcd34d;
+  --warning-bg: rgb(245 158 11 / 0.16);
+  --danger:  #fca5a5;
+  --danger-bg: rgb(239 68 68 / 0.16);
+  --info:    var(--c-electric-300);
+  --info-bg: rgb(56 189 248 / 0.16);
+  --neutral: #a8b6d1;
+  --neutral-bg: rgb(159 177 212 / 0.14);
+
+  --glass-bg:     rgb(18 28 49 / 0.66);
+  --glass-border: rgb(167 139 250 / 0.16);
+  --glass-blur:   18px;
+
+  --aurora-opacity: 0.62;
+  --scrim: rgb(3 6 14 / 0.66);
+
+  --shadow-color: 0 0 0;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.34);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.40), 0 1px 2px rgb(0 0 0 / 0.26);
+  --shadow-md: 0 4px 14px rgb(0 0 0 / 0.46), 0 2px 6px rgb(0 0 0 / 0.28);
+  --shadow-lg: 0 14px 34px rgb(0 0 0 / 0.54), 0 5px 12px rgb(0 0 0 / 0.32);
+  --shadow-xl: 0 28px 60px rgb(0 0 0 / 0.62), 0 10px 20px rgb(0 0 0 / 0.36);
+
+  /* Glow is elevation here, not decoration: it is what separates a raised
+     surface from the one behind it when shadow cannot. */
+  --glow-accent: 0 0 0 1px rgb(167 139 250 / 0.22);
+  --glow-strong: 0 0 34px -10px rgb(139 92 246 / 0.55);
+}

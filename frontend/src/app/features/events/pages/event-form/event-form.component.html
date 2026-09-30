@@ -1,0 +1,109 @@
+<a [routerLink]="[basePath, 'events']" class="back-link">&larr; Back to events</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">{{ isEditMode() ? 'Edit event' : 'Create event' }}</h1>
+    <p class="page-subtitle">
+      {{ isEditMode()
+          ? 'Only a draft event can be edited. Publishing makes it visible to students.'
+          : 'The event is created as a draft. Nobody sees it until you publish it.' }}
+    </p>
+  </div>
+</div>
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else {
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form-page" novalidate>
+    <div class="mb-3">
+      <label class="form-label" for="event-title">Title</label>
+      <input id="event-title" class="form-control" formControlName="title" />
+      @if (form.controls.title.touched && form.controls.title.invalid) {
+        <div class="text-danger small mt-1">Title must be 3-200 characters.</div>
+      }
+      @if (fieldErrors()['title']) {
+        <div class="text-danger small mt-1">{{ fieldErrors()['title'] }}</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="event-description">Description</label>
+      <textarea id="event-description" class="form-control" rows="3" formControlName="description"></textarea>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-sm-6">
+        <label class="form-label" for="event-event-date">Event date</label>
+        <input id="event-event-date" type="date" class="form-control" formControlName="event_date" />
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label" for="event-venue">Venue</label>
+        <input id="event-venue" class="form-control" formControlName="venue" />
+        @if (fieldErrors()['venue']) {
+          <div class="text-danger small mt-1">{{ fieldErrors()['venue'] }}</div>
+        }
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-sm-6">
+        <label class="form-label" for="event-category">Category</label>
+        <input id="event-category" class="form-control" formControlName="category" placeholder="e.g. Technical, Cultural, Sports" />
+        @if (fieldErrors()['category']) {
+          <div class="text-danger small mt-1">{{ fieldErrors()['category'] }}</div>
+        }
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label" for="event-conducting-college">Conducting college</label>
+        <select id="event-conducting-college" class="form-select" formControlName="conducting_college">
+          <option [ngValue]="null" disabled>Select a college</option>
+          @for (college of colleges(); track college.id) {
+            <option [ngValue]="college.id">{{ college.name }}</option>
+          }
+        </select>
+        @if (fieldErrors()['conducting_college']) {
+          <div class="text-danger small mt-1">{{ fieldErrors()['conducting_college'] }}</div>
+        }
+      </div>
+    </div>
+
+    <div class="row g-3 mb-2">
+      <div class="col-sm-6">
+        <label class="form-label" for="event-registration-start-date">Registration start date</label>
+        <input id="event-registration-start-date" type="date" class="form-control" formControlName="registration_start_date" />
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label" for="event-registration-end-date">Registration end date</label>
+        <input id="event-registration-end-date" type="date" class="form-control" formControlName="registration_end_date" />
+      </div>
+    </div>
+
+    @if (form.hasError('dateOrder')) {
+      <div class="text-danger small mb-2">Registration start date must be on or before the end date.</div>
+    }
+    @if (form.hasError('registrationEndNotBeforeEventDate')) {
+      <div class="text-danger small mb-2">Registration end date must be before the event date.</div>
+    }
+    @if (fieldErrors()['registration_start_date']) {
+      <div class="text-danger small mb-2">{{ fieldErrors()['registration_start_date'] }}</div>
+    }
+    @if (fieldErrors()['registration_end_date']) {
+      <div class="text-danger small mb-2">{{ fieldErrors()['registration_end_date'] }}</div>
+    }
+
+    <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+      @if (submitting()) {
+        <span class="spinner-border spinner-border-sm me-2"></span>
+      }
+      {{ isEditMode() ? 'Save changes' : 'Create event' }}
+    </button>
+  </form>
+}

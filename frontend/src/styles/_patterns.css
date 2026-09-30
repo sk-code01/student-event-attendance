@@ -1,0 +1,1014 @@
+/* =========================================================================
+   SEAMS-AI — Reusable UI patterns
+   Page headers, stat cards, toasts, skeletons, empty states, auth pages.
+   ========================================================================= */
+
+/* ---------------------------------------------------------- PAGE HEADER -- */
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.page-head-titles { min-width: 0; }
+.page-title {
+  font-size: var(--text-xl);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
+  margin: 0;
+}
+.page-subtitle { color: var(--text-3); font-size: var(--text-sm); margin: 0.25rem 0 0; }
+.page-head-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-3);
+  text-decoration: none;
+  margin-bottom: var(--space-2);
+}
+.back-link:hover { color: var(--accent); }
+
+/* ------------------------------------------------------------ STAT GRID -- */
+
+/* auto-fit + minmax is what makes the dashboard responsive with no
+   breakpoints: columns are added and removed by available width alone, so it
+   works identically at 320px and 2560px. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
+  /* Each card sizes to its own content. Stretching them to match the tallest
+     sibling leaves a single number stranded in a mostly empty box whenever
+     one card carries a list. */
+  align-items: start;
+  gap: var(--grid-gap);
+}
+.stat-grid.is-dense {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--card-pad);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--card-elevation);
+  color: var(--text-1);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-normal) var(--ease-out),
+              transform var(--dur-normal) var(--ease-out);
+}
+/* Elevation on a dark ground is surface contrast + hairline + a little light,
+   not black shadow, which simply vanishes against navy. */
+.stat-card {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.035) 0%, transparent 42%),
+    var(--card-bg);
+}
+
+a.stat-card:hover,
+a.stat-card:focus-visible {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--card-border));
+  box-shadow: var(--shadow-md), var(--glow-strong);
+  color: var(--text-1);
+  transform: translateY(-3px);
+}
+
+/* A card that wants attention earns the accent edge; the rest stay quiet.
+   This is the whole of requirement 36: neon is for state, not for decoration. */
+.stat-card.is-attention {
+  border-color: color-mix(in oklab, var(--warning) 45%, var(--card-border));
+}
+.stat-card.is-quiet { opacity: 0.82; }
+
+.stat-value {
+  /* A metric is a headline, not body text: the display face and a tighter
+     track give it the weight it should have on the page. Tabular figures keep
+     a column of counts aligned as they animate. */
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.0;
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A zero is still information, but it is not news — muting it lets the
+   non-zero figures carry the grid. */
+.stat-card.is-quiet .stat-value { color: var(--text-2); }
+
+.stat-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* A hairline accent along the top edge, tinted by state. */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  opacity: 0.85;
+}
+.stat-card.is-attention::before { background: var(--warning); }
+.stat-card.is-quiet::before { opacity: 0; }
+
+/* ------------------------------------------------------------- SECTION --- */
+
+.section { margin-top: var(--space-8); }
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.section-title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform, none);
+  margin: 0;
+}
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--grid-gap); }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--grid-gap); }
+
+/* -------------------------------------------------------- EMPTY STATE ---- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-5);
+  color: var(--text-2);
+}
+/* A soft accent halo rather than a flat disc, so an empty screen still looks
+   designed rather than unfinished. */
+.empty-state-icon {
+  width: 3rem; height: 3rem;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  background:
+    radial-gradient(circle at 50% 45%,
+      color-mix(in oklab, var(--accent) 26%, transparent) 0%,
+      transparent 72%),
+    var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: var(--space-1);
+}
+.empty-state-icon svg { width: 1.5rem; height: 1.5rem; }
+.empty-state-title { font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text-1); margin: 0; }
+.empty-state-text { font-size: var(--text-sm); color: var(--text-3); max-width: 42ch; margin: 0; }
+.empty-state-actions { margin-top: var(--space-3); display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: center; }
+
+/* ---------------------------------------------------------- SKELETONS ---- */
+
+.skeleton {
+  display: block;
+  /* The sweep carries a trace of the accent. A purely neutral shimmer is
+     almost invisible on a dark ground — the eye needs a hue shift, not just a
+     lightness one, to read it as movement. */
+  background: linear-gradient(90deg,
+    var(--surface-3) 25%,
+    color-mix(in oklab, var(--accent) 16%, var(--surface-2)) 37%,
+    var(--surface-3) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--radius-sm);
+  animation: skeleton-sweep 1.4s var(--ease-in-out) infinite;
+}
+.skeleton-text { height: 0.75rem; margin-bottom: 0.5rem; }
+.skeleton-text:last-child { width: 60%; margin-bottom: 0; }
+.skeleton-title { height: 1.25rem; width: 40%; margin-bottom: var(--space-3); }
+.skeleton-card { height: 6.5rem; border-radius: var(--radius-card); }
+
+@keyframes skeleton-sweep {
+  from { background-position: 100% 50%; }
+  to   { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; background: var(--surface-3); }
+}
+
+/* ------------------------------------------------------------- TOASTS ---- */
+
+.toast-stack {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(24rem, calc(100vw - var(--space-8)));
+  pointer-events: none;
+}
+@media (max-width: 575.98px) {
+  .toast-stack { left: var(--space-3); right: var(--space-3); bottom: var(--space-3); width: auto; }
+}
+
+.toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--neutral);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-lg), var(--glow-accent);
+  color: var(--text-1);
+  animation: toast-in var(--dur-normal) var(--ease-out);
+  /* Glass, deliberately: a toast floats over whatever the reader was looking
+     at, and letting a hint of that through is what makes it read as floating
+     rather than as a block dropped on top. Requirement 9 names exactly this
+     kind of overlay as a place for the treatment. */
+  background: var(--glass-bg);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .toast-item { backdrop-filter: blur(var(--glass-blur)) saturate(1.3); }
+}
+.toast-item.is-success { border-left-color: var(--success); }
+.toast-item.is-error   { border-left-color: var(--danger); }
+.toast-item.is-warning { border-left-color: var(--warning); }
+.toast-item.is-info    { border-left-color: var(--info); }
+
+.toast-icon { flex: 0 0 auto; width: 1.125rem; height: 1.125rem; margin-top: 0.15rem; }
+.toast-item.is-success .toast-icon { color: var(--success); }
+.toast-item.is-error   .toast-icon { color: var(--danger); }
+.toast-item.is-warning .toast-icon { color: var(--warning); }
+.toast-item.is-info    .toast-icon { color: var(--info); }
+
+.toast-body { min-width: 0; flex: 1; }
+.toast-title { font-weight: var(--weight-semibold); font-size: var(--text-base); }
+.toast-text  { font-size: var(--text-sm); color: var(--text-2); overflow-wrap: anywhere; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* -------------------------------------------------------- CONFIRM DIALOG - */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--scrim);
+  animation: fade-in var(--dur-fast) var(--ease-out);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .dialog-backdrop { backdrop-filter: blur(3px); }
+}
+
+.dialog {
+  width: min(30rem, 100%);
+  max-height: calc(100dvh - var(--space-8));
+  overflow: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-xl);
+  padding: var(--card-pad);
+  animation: dialog-in var(--dur-normal) var(--ease-out);
+}
+.dialog-head { display: flex; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-3); }
+.dialog-icon {
+  flex: 0 0 auto;
+  width: 2.5rem; height: 2.5rem;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--neutral-bg);
+  color: var(--neutral);
+}
+.dialog-icon svg { width: 1.25rem; height: 1.25rem; }
+.dialog.is-danger .dialog-icon { background: var(--danger-bg); color: var(--danger); }
+.dialog.is-warning .dialog-icon { background: var(--warning-bg); color: var(--warning); }
+
+.dialog-title { font-size: var(--text-lg); margin: 0 0 0.15rem; }
+.dialog-text { color: var(--text-2); font-size: var(--text-base); margin: 0; }
+.dialog-consequence {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  border-left: 3px solid var(--warning);
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); flex-wrap: wrap; }
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------- AUTH PAGES ---- */
+
+/* ------------------------------------------------------------- AUTH ------
+
+   The most decorated screen in the product (requirement 19): the field of
+   drifting points, the mesh and the glass card all belong here, where there
+   is no data to read and a first impression to make. The form itself stays
+   completely plain — the effects sit behind it, never in it.
+   --------------------------------------------------------------------- */
+
+.auth-page {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6) var(--space-4);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The particle field, drawn entirely in CSS.
+   Three layered radial-gradient "starfields" translating at different speeds
+   give parallax depth for the cost of two composited layers — no canvas, no
+   per-frame JavaScript, nothing that keeps the main thread busy while someone
+   is trying to type a password (requirement 37). */
+.auth-page::before,
+.auth-page::after {
+  content: '';
+  position: absolute;
+  /* Only enough overhang to cover the drift. Oversizing this (an earlier pass
+     used -50%) scales every percentage position with it, which pushes most of
+     the field outside the viewport and leaves the effect technically present
+     and visually absent. */
+  inset: -12%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.auth-page::before {
+  background:
+    radial-gradient(2px 2px at 12% 22%, var(--c-electric-300), transparent 62%),
+    radial-gradient(2px 2px at 78% 14%, var(--c-purple-300), transparent 62%),
+    radial-gradient(1.5px 1.5px at 34% 68%, var(--c-electric-400), transparent 62%),
+    radial-gradient(2.5px 2.5px at 62% 47%, var(--c-purple-400), transparent 62%),
+    radial-gradient(1.5px 1.5px at 88% 76%, var(--c-electric-300), transparent 62%),
+    radial-gradient(2px 2px at 22% 88%, var(--c-purple-300), transparent 62%),
+    radial-gradient(1.5px 1.5px at 46% 18%, var(--c-electric-400), transparent 62%),
+    radial-gradient(1.5px 1.5px at 8% 54%, var(--c-purple-400), transparent 62%),
+    radial-gradient(2px 2px at 70% 84%, var(--c-electric-300), transparent 62%),
+    radial-gradient(1.5px 1.5px at 94% 38%, var(--c-purple-300), transparent 62%);
+  /* Raised from a first pass that was technically present and visually
+     nothing: against a near-black ground a 55%-opacity 1px point simply does
+     not read. */
+  opacity: 0.9;
+  animation: drift-slow 42s linear infinite alternate;
+}
+
+.auth-page::after {
+  background:
+    radial-gradient(38% 44% at 14% 8%, color-mix(in oklab, var(--accent) 62%, transparent), transparent 68%),
+    radial-gradient(34% 40% at 88% 4%, color-mix(in oklab, var(--accent-2) 56%, transparent), transparent 68%),
+    radial-gradient(44% 50% at 52% 104%, color-mix(in oklab, var(--c-purple-700) 58%, transparent), transparent 70%);
+  opacity: calc(var(--aurora-opacity) * 1.35);
+  animation: aurora-drift 40s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes drift-slow {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(1.5%, -2%, 0); }
+}
+
+.auth-card {
+  position: relative;
+  width: min(27rem, 100%);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl), var(--glow-strong);
+  animation: rise-in var(--dur-slow) var(--ease-out) both;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .auth-card { backdrop-filter: blur(var(--glass-blur)) saturate(1.4); }
+}
+
+/* A lit top edge, the same hairline the metric cards use, so the login screen
+   is recognisably the same product as the dashboard. */
+.auth-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--gradient-brand);
+}
+
+.auth-brand { text-align: center; margin-bottom: var(--space-5); }
+
+.auth-brand .brand-mark {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: var(--text-md);
+  margin: 0 auto var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-brand);
+  box-shadow: var(--glow-strong);
+}
+
+.auth-brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .auth-brand-name { background: none; color: var(--text-1); }
+}
+
+.auth-brand-full { font-size: var(--text-sm); color: var(--text-3); margin: 0.35rem 0 0; }
+
+/* ------------------------------------------------------------ MISC ------- */
+
+/* Glass utility for one-off surfaces that want it regardless of role. */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .glass { backdrop-filter: blur(var(--glass-blur)) saturate(1.3); }
+}
+
+/* A horizontal strip of filter controls above a table. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--card-pad);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-4);
+}
+
+.meta-list { display: grid; gap: var(--space-2); }
+.meta-row { display: flex; gap: var(--space-3); font-size: var(--text-sm); }
+.meta-key { color: var(--text-3); flex: 0 1 9rem; }
+.meta-val { color: var(--text-1); min-width: 0; margin-left: auto; text-align: right; }
+
+/* On a phone the label column shrinks rather than the pair stacking: a short
+   count stacked over its own label ("STUDENT" / "1") reads as two separate
+   facts. A long value still wraps inside its own cell. */
+@media (max-width: 575.98px) {
+  .meta-key { flex: 0 1 auto; }
+}
+
+/* Long unbroken strings (usernames, hashes, emails) must wrap rather than
+   widen their container and take the page with them. */
+td, .meta-val, .toast-text, .card-text { overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------- EVENT CARDS ----- */
+
+/* Student event discovery. The whole card is the link, so everything inside
+   it is presentational; the accessible name comes from the title. */
+.event-card { height: 100%; }
+.event-card .card-body { gap: var(--space-2); }
+
+.event-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.event-card-category {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--accent);
+}
+
+.event-card-title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  margin: 0;
+  color: var(--text-1);
+}
+
+.event-card-meta { display: grid; gap: 0.1rem; margin: 0; }
+.event-card-meta dd { margin: 0; font-size: var(--text-sm); color: var(--text-2); }
+.event-card-meta div:first-child dd { color: var(--text-1); font-weight: var(--weight-medium); }
+
+.event-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.event-card-cta {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--accent);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.event-card:hover .event-card-cta { transform: translateX(3px); }
+
+/* ------------------------------------------------------ LIVE CAPTURE ----- */
+
+/* Professional verification camera. Deliberately narrow and centred: this is
+   a single-task screen and everything competing for attention has been
+   removed from it. */
+.capture-page { max-width: 42rem; margin-inline: auto; }
+
+.capture-stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: #0b1220;
+  border: 1px solid var(--border-strong);
+}
+.capture-stage video,
+.capture-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Framing guide — decorative, never a validation signal. */
+.capture-guide {
+  position: absolute;
+  inset: 8%;
+  border: 2px dashed rgb(255 255 255 / 0.35);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}
+
+.capture-live-badge {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+}
+.capture-live-dot {
+  width: 0.5rem; height: 0.5rem;
+  border-radius: 50%;
+  background: var(--c-red-500);
+  animation: capture-pulse 2s var(--ease-in-out) infinite;
+}
+@keyframes capture-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .capture-live-dot { animation: none; } }
+
+/* Status strip: the conditions that decide acceptance, stated up front. */
+.capture-status {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-2);
+}
+.capture-status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-1);
+}
+/* State is carried by the label text as well as the colour. */
+.capture-status-item.is-ok  { border-left-color: var(--success); }
+.capture-status-item.is-bad { border-left-color: var(--danger); }
+
+.capture-status-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-3);
+}
+.capture-status-value { font-size: var(--text-sm); color: var(--text-1); }
+
+.capture-hint {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  margin-bottom: var(--space-4);
+}
+
+.capture-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.capture-actions .btn-lg { flex: 1 1 14rem; }
+
+.capture-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.capture-thumb { position: relative; margin: 0; }
+.capture-thumb img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  display: block;
+}
+.capture-thumb figcaption { margin-top: var(--space-1); }
+.capture-thumb-remove {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  line-height: 1;
+  min-height: auto;
+  padding: 0.1rem 0.4rem;
+}
+
+/* --------------------------------------------------------------- TABLES --- */
+
+/* A table lives in its own surface rather than floating on the page
+   background, so a long list reads as one object. */
+.table-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.table-card > .table-wrap > .table { margin: 0; }
+
+/* Wide tables scroll inside this box. The page itself must never scroll
+   sideways, so the overflow is owned here and nowhere else. */
+.table-wrap { overflow-x: auto; overscroll-behavior-x: contain; }
+
+/* On a phone a seven-column table is unreadable however it scrolls, so each
+   row becomes a small card and each cell carries its own label. The header
+   row is hidden visually but kept in the DOM: screen readers still announce
+   the column names, and `data-label` gives sighted users the same names. */
+@media (max-width: 767.98px) {
+  .table-stack thead {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .table-stack,
+  .table-stack tbody,
+  .table-stack tr,
+  .table-stack td { display: block; }
+  .table-stack tbody tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background: var(--surface-2);
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+  .table-stack tbody tr:last-child { margin-bottom: 0; }
+  .table-stack td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    border: 0;
+    padding: 0.3rem 0;
+    text-align: left;
+  }
+  .table-stack td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: var(--text-3);
+    font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  /* An actions cell carries no label, so it spans the row instead. */
+  .table-stack td:not([data-label]) { justify-content: flex-start; padding-top: var(--space-2); }
+  .table-stack td:not([data-label])::before { content: none; }
+  .table-stack .table-cell-value { text-align: right; min-width: 0; }
+  .table-card { border: 0; background: none; border-radius: 0; }
+}
+
+/* ---------------------------------------------------------- DEFINITION --- */
+
+/* Label/value pairs — the shape most detail pages need. */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+.detail-grid > div { min-width: 0; }
+.detail-term {
+  display: block;
+  color: var(--text-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.detail-desc { margin: 0; font-size: var(--text-sm); color: var(--text-1); overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------------ TOOLBARS --- */
+
+/* Wraps rather than scrolls: filters must stay reachable at 320px. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.toolbar-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; flex: 1 1 11rem; }
+.toolbar-label {
+  color: var(--text-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.toolbar-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* ----------------------------------------------------------- FORM PAGE --- */
+
+/* A form is read one field at a time, so it keeps a comfortable measure
+   instead of stretching to the width of a desktop monitor. */
+.form-page { max-width: 52rem; }
+
+/* ------------------------------------------------------------------ HERO ---
+
+   The dashboard's one high-effect surface. Requirement 10 asks for strong
+   treatment in hero areas and restraint everywhere else, so the gradient
+   mesh, the glass and the glow all live here and stop here — the tables and
+   forms below stay plain on purpose.
+   --------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.25rem, 1rem + 1.4vw, 2.25rem);
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  box-shadow: var(--shadow-lg), var(--glow-accent);
+  isolation: isolate;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .hero { backdrop-filter: blur(var(--glass-blur)) saturate(1.3); }
+}
+
+/* The mesh itself, kept behind the content and out of the accessibility tree. */
+.hero-aurora {
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.85;
+  background:
+    radial-gradient(28% 40% at 8% 12%, color-mix(in oklab, var(--accent) 52%, transparent), transparent 70%),
+    radial-gradient(26% 38% at 92% 0%, color-mix(in oklab, var(--accent-2) 46%, transparent), transparent 70%),
+    radial-gradient(34% 44% at 60% 108%, color-mix(in oklab, var(--c-navy-600) 40%, transparent), transparent 72%);
+  animation: aurora-drift 36s var(--ease-in-out) infinite alternate;
+  will-change: transform;
+}
+
+.hero-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.hero-titles { min-width: 0; }
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* A single small live indicator. One is atmosphere; one per card would be
+   noise, which is the line requirement 38 draws. */
+.hero-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-2);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent-2) 70%, transparent);
+  animation: hero-pulse 2.6s var(--ease-out) infinite;
+}
+
+@keyframes hero-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent-2) 60%, transparent); }
+  70%  { box-shadow: 0 0 0 10px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  /* The gradient rides the text itself rather than sitting behind it, which
+     keeps the contrast of the glyph edges under the reader's control. */
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Where the gradient cannot be clipped to text, fall back to a solid colour
+   rather than to transparent — an invisible title is worse than a plain one. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-title { background: none; color: var(--text-1); }
+}
+
+.hero-subtitle {
+  margin: var(--space-2) 0 0;
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hero-stat { min-width: 0; }
+
+.hero-stat dt {
+  color: var(--text-3);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.hero-stat dd {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Only a figure that is actually non-zero takes the accent. A row of glowing
+   zeroes would make "needs attention" meaningless. */
+.hero-stat dd.is-live { color: var(--accent-2); }
+
+
+/* ---------------------------------------------------------------- AI ----
+   The one part of the product whose numbers are inferred rather than
+   counted, and it should look like it. The treatment is a *label*, not a
+   claim of confidence: the panel's own wording about decision support and
+   about a level being "a prompt to look, not a finding" is unchanged.
+   -------------------------------------------------------------------- */
+
+.ai-section { position: relative; }
+
+/* An accent hairline down the left of the whole section, so the boundary
+   between counted and inferred is visible without reading a word. */
+.ai-section::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-3) * -1);
+  top: 0.25rem;
+  bottom: 0.25rem;
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%);
+  opacity: 0.55;
+}
+@media (max-width: 767.98px) {
+  /* There is no room for a bleed rule at phone width; the chip carries the
+     signal on its own. */
+  .ai-section::before { display: none; }
+}
+
+.ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  background: var(--gradient-subtle);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ai-chip::before {
+  content: '';
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 6px 1px color-mix(in oklab, var(--accent-2) 80%, transparent);
+  animation: ai-pulse 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* An AI card carries a faint gradient wash and a lit top edge, one step
+   warmer than an ordinary card without becoming a different component. */
+.ai-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--accent) 7%, transparent) 0%,
+      transparent 55%),
+    var(--card-bg);
+  border-color: color-mix(in oklab, var(--accent) 22%, var(--card-border));
+}
+.ai-card::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-chip::before { animation: none; }
+}

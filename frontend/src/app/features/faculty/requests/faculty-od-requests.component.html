@@ -1,0 +1,101 @@
+<a routerLink="/faculty" class="back-link">&larr; Back to Faculty area</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">OD Requests</h1>
+    <p class="page-subtitle">On-Duty is an independent request from attendance. You request it with a justification; your Event Coordinator approves or rejects it.</p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (rows().length === 0) {
+  <app-empty-state
+    title="Nothing awaiting a request"
+    message="On-duty can only be requested for verified participation. Verify evidence in your queue and it will appear here."
+    icon="check"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">OD status</th>
+            <th scope="col">Reason</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.evidence.id) {
+            <tr>
+              <td data-label="Student">{{ row.evidence.student.username }}</td>
+              <td data-label="Event">{{ row.evidence.event.title }}</td>
+              <td data-label="Event date" class="small text-muted">{{ row.evidence.event.event_date | date: 'mediumDate' }}</td>
+              <td data-label="OD status">
+                @if (row.odRequest) {
+                  <span class="badge" [class]="badgeClass(row.odRequest.status)">{{ row.odRequest.status }}</span>
+                } @else {
+                  <span class="text-muted small">Not requested</span>
+                }
+              </td>
+              <td data-label="Reason" class="small">
+                {{ row.odRequest?.reason || '—' }}
+                @if (row.odRequest && row.odRequest.rejection_reason) {
+                  <div class="text-danger">Rejected: {{ row.odRequest.rejection_reason }}</div>
+                }
+              </td>
+              <td>
+                @if (!row.odRequest) {
+                  @if (composingId() === row.evidence.id) {
+                    <div class="d-flex flex-column gap-1" style="min-width: 16rem">
+                      <textarea aria-label="Reason for OD (required)"
+                        class="form-control form-control-sm"
+                        rows="2"
+                        placeholder="Reason for OD (required)"
+                        [(ngModel)]="reason"
+                        name="reason-{{ row.evidence.id }}"
+                        ></textarea>
+                      <div class="d-flex gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-primary"
+                          [disabled]="!reason.trim() || submittingId() !== null"
+                          (click)="confirmRequest(row)"
+                        >
+                          {{ submittingId() === row.evidence.id ? 'Requesting…' : 'Submit OD Request' }}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="cancelRequest()">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <button type="button" class="btn btn-sm btn-primary" (click)="startRequest(row)">
+                      Request OD
+                    </button>
+                  }
+                } @else if (row.odRequest.status === 'PENDING') {
+                  <span class="small text-muted">Awaiting Event Coordinator decision</span>
+                } @else {
+                  <span class="small text-muted">Decided by {{ row.odRequest.reviewed_by?.username ?? '—' }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

@@ -1,0 +1,107 @@
+<a [routerLink]="homeRoute()" class="back-link">&larr; Back</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Audit Trail</h1>
+    <p class="page-subtitle">The business and security trail recorded by the system. @if (authService.currentUser()?.role === 'EVENT_COORDINATOR') { Scoped to actions performed by members of your department. } @else { System-wide. }</p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (!forbidden()) {
+  <div class="filter-bar">
+    <div class="toolbar-field">
+      <label class="toolbar-label" for="filter-action">Action</label>
+      <input
+        id="filter-action"
+        type="text"
+        class="form-control form-control-sm"
+        placeholder="e.g. ATTENDANCE_APPROVED"
+        [(ngModel)]="action"
+        name="action"
+      />
+    </div>
+    <div class="toolbar-field">
+      <label class="toolbar-label" for="filter-search">Description contains</label>
+      <input
+        id="filter-search"
+        type="text"
+        class="form-control form-control-sm"
+        [(ngModel)]="search"
+        name="search"
+      />
+    </div>
+    <div class="toolbar-field">
+      <label class="toolbar-label" for="filter-from">From</label>
+      <input id="filter-from" type="date" class="form-control form-control-sm" [(ngModel)]="dateFrom" name="dateFrom" />
+    </div>
+    <div class="toolbar-field">
+      <label class="toolbar-label" for="filter-to">To</label>
+      <input id="filter-to" type="date" class="form-control form-control-sm" [(ngModel)]="dateTo" name="dateTo" />
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" class="btn btn-sm btn-primary" (click)="applyFilters()">Filter</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div aria-hidden="true">
+      @for (slot of [0, 1, 2, 3]; track slot) {
+        <span class="skeleton skeleton-text"></span>
+      }
+    </div>
+    <span class="sr-only" role="status">Loading&hellip;</span>
+  } @else if (records().length === 0) {
+    <app-empty-state
+      title="No audit records match"
+      message="Nothing in the trail fits this combination of filters. Widen the date range or clear a filter to see more."
+      icon="search"
+    />
+  } @else {
+    <p class="text-muted small">{{ totalCount() }} records</p>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="table table-sm align-middle table-stack">
+          <thead>
+            <tr>
+              <th scope="col">When</th>
+              <th scope="col">Actor</th>
+              <th scope="col">Action</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of records(); track record.id) {
+              <tr>
+                <td data-label="When" class="small text-muted text-nowrap">{{ record.created_at | date: 'medium' }}</td>
+                <td data-label="Actor" class="small">
+                  @if (record.actor) {
+                    {{ record.actor.username }}
+                    <div class="text-muted">{{ record.actor.role }}</div>
+                  } @else {
+                    <span class="text-muted">system</span>
+                  }
+                </td>
+                <td data-label="Action"><span class="badge text-bg-secondary">{{ record.action }}</span></td>
+                <td data-label="Description" class="small">{{ record.description }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!hasPrevious()" (click)="previousPage()">
+        &larr; Previous
+      </button>
+      <span class="small text-muted">Page {{ page() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="!hasNext()" (click)="nextPage()">
+        Next &rarr;
+      </button>
+    </div>
+  }
+}

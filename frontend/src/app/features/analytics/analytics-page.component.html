@@ -1,0 +1,271 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Analytics</h1>
+    @if (authService.currentUser(); as user) {
+      <p class="page-subtitle">
+        {{ user.role }} view &middot; scoped to what you are authorized to see
+        @if (user.department?.name) {
+          &middot; {{ user.department?.name }}
+        }
+      </p>
+    }
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/dashboard" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+    <a routerLink="/reports" class="btn btn-outline-primary btn-sm">Reports</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="date-from">From</label>
+    <input id="date-from" type="date" class="form-control form-control-sm" [(ngModel)]="dateFrom" name="dateFrom" />
+  </div>
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="date-to">To</label>
+    <input id="date-to" type="date" class="form-control form-control-sm" [(ngModel)]="dateTo" name="dateTo" />
+  </div>
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="category">Category</label>
+    <input
+      id="category"
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="e.g. Technical"
+      [(ngModel)]="category"
+      name="category"
+    />
+  </div>
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="period">Trend period</label>
+    <select id="period" class="form-select form-select-sm" [(ngModel)]="period" name="period">
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+  </div>
+  <div class="toolbar-actions">
+    <button type="button" class="btn btn-sm btn-primary" (click)="applyFilters()">Apply</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearFilters()">Clear</button>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="stat-grid" aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-card"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading analytics&hellip;</span>
+} @else {
+  <!-- Headline counts -->
+  @if (overview(); as o) {
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ o.participations }}</span>
+        <span class="stat-label">Participations</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ o.live_registrations }}</span>
+        <span class="stat-label">Live registrations</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ o.verified_participations }}</span>
+        <span class="stat-label">Verified</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ rate(o.participation_rate) }}</span>
+        <span class="stat-label">Participation rate</span>
+      </div>
+    </div>
+    <p class="form-text">Participation rate basis: {{ o.participation_rate_basis }}</p>
+  }
+
+  <!-- Trends -->
+  @if (trends(); as t) {
+    <section class="section">
+      <div class="card">
+        <div class="card-body">
+          <app-line-chart
+            [title]="'Activity over time (' + t.period + ', ' + t.timezone + ')'"
+            [labels]="trendLabels()"
+            [series]="trendSeries()"
+            emptyMessage="No activity in this period."
+          />
+          @if (t.series.length > 0) {
+            <div class="grid-3">
+              @for (metric of trendMetrics; track metric.key) {
+                <div class="stat-card">
+                  <span class="stat-label">{{ metric.label }}</span>
+                  <span [class]="directionClass(metric.key)">{{ directionLabel(metric.key) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="section">
+    <div class="grid-2">
+      <!-- Participation -->
+      <div class="card">
+        <div class="card-body">
+          <app-bar-chart
+            title="Participations by event"
+            valueLabel="count"
+            [data]="participationByEvent()"
+            emptyMessage="No participations yet."
+          />
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <app-bar-chart
+            title="Participations by category"
+            valueLabel="count"
+            [data]="participationByCategory()"
+            emptyMessage="No participations yet."
+          />
+        </div>
+      </div>
+
+      <!-- Attendance / OD, side by side but never merged -->
+      <div class="card">
+        <div class="card-body">
+          <h2 class="section-title">Attendance</h2>
+          @if (attendance(); as a) {
+            <ul class="meta-list">
+              <li class="meta-row"><span class="meta-key">Requests</span><span class="meta-val">{{ a.total_requests }}</span></li>
+              <li class="meta-row"><span class="meta-key">Pending</span><span class="meta-val">{{ a.pending }}</span></li>
+              <li class="meta-row"><span class="meta-key">Approved</span><span class="meta-val">{{ a.approved }}</span></li>
+              <li class="meta-row"><span class="meta-key">Rejected</span><span class="meta-val">{{ a.rejected }}</span></li>
+              <li class="meta-row"><span class="meta-key">Approval rate</span><span class="meta-val fw-semibold">{{ rate(a.approval_rate) }}</span></li>
+            </ul>
+            <p class="form-text mb-0">{{ a.approval_rate_basis }}</p>
+          }
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h2 class="section-title">OD <span class="text-muted fw-normal">(independent of attendance)</span></h2>
+          @if (od(); as o) {
+            <ul class="meta-list">
+              <li class="meta-row"><span class="meta-key">Requests</span><span class="meta-val">{{ o.total_requests }}</span></li>
+              <li class="meta-row"><span class="meta-key">Pending</span><span class="meta-val">{{ o.pending }}</span></li>
+              <li class="meta-row"><span class="meta-key">Approved</span><span class="meta-val">{{ o.approved }}</span></li>
+              <li class="meta-row"><span class="meta-key">Rejected</span><span class="meta-val">{{ o.rejected }}</span></li>
+              <li class="meta-row"><span class="meta-key">Approval rate</span><span class="meta-val fw-semibold">{{ rate(o.approval_rate) }}</span></li>
+            </ul>
+            <p class="form-text mb-0">{{ o.approval_rate_basis }}</p>
+          }
+        </div>
+      </div>
+
+      <!-- Verification -->
+      <div class="card">
+        <div class="card-body">
+          <h2 class="section-title">Verification</h2>
+          @if (verification(); as v) {
+            <ul class="meta-list">
+              <li class="meta-row"><span class="meta-key">Evidence submitted</span><span class="meta-val">{{ v.total_evidence }}</span></li>
+              <li class="meta-row"><span class="meta-key">Awaiting review</span><span class="meta-val">{{ v.pending_review }}</span></li>
+              <li class="meta-row"><span class="meta-key">Verified</span><span class="meta-val">{{ v.verified }}</span></li>
+              <li class="meta-row"><span class="meta-key">Rejected</span><span class="meta-val">{{ v.rejected }}</span></li>
+              <li class="meta-row"><span class="meta-key">Resubmission required</span><span class="meta-val">{{ v.resubmission_required }}</span></li>
+              <li class="meta-row"><span class="meta-key">Event Coordinator overrides</span><span class="meta-val">{{ v.event_coordinator_overrides }}</span></li>
+              <li class="meta-row"><span class="meta-key">Verification rate</span><span class="meta-val fw-semibold">{{ rate(v.verification_rate) }}</span></li>
+            </ul>
+            <p class="form-text mb-0">{{ v.decision_basis }}</p>
+          }
+        </div>
+      </div>
+
+      <!-- Achievements -->
+      <div class="card">
+        <div class="card-body">
+          <app-bar-chart
+            title="Achievements by type"
+            valueLabel="count"
+            [data]="achievementsByType()"
+            emptyMessage="No achievements recorded yet."
+          />
+          @if (achievements(); as a) {
+            <p class="form-text mb-0">
+              {{ a.official_achievements }} of {{ a.total_achievements }} are official (approved).
+            </p>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Events -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Events</h2>
+    </div>
+    @if (events(); as e) {
+      @if (e.per_event.length === 0) {
+        <app-empty-state
+          title="No events in this selection"
+          message="Widen the date range or clear the category filter to include more events."
+          icon="calendar"
+        />
+      } @else {
+        <div class="table-card">
+          <div class="table-wrap">
+            <table class="table table-sm table-stack align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">Event</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Category</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="text-end">Registrations</th>
+                  <th scope="col" class="text-end">Participations</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of e.per_event; track row.id) {
+                  <tr>
+                    <td data-label="Event">{{ row.title }}</td>
+                    <td data-label="Date" class="small text-muted">{{ row.event_date }}</td>
+                    <td data-label="Category" class="small text-muted">{{ row.category }}</td>
+                    <td data-label="Status"><span class="badge text-bg-secondary">{{ row.status }}</span></td>
+                    <td data-label="Registrations" class="text-end">{{ row.registrations }}</td>
+                    <td data-label="Participations" class="text-end">{{ row.participations }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <!-- Departments: Event Coordinator (own) and Admin (all) only -->
+  @if (canSeeDepartments() && departments(); as d) {
+    <section class="section">
+      <div class="card">
+        <div class="card-body">
+          <app-bar-chart
+            title="Participations by department"
+            valueLabel="count"
+            [data]="departmentParticipation()"
+            emptyMessage="No department data yet."
+          />
+          <p class="form-text">{{ d.department_less_note }}</p>
+          <p class="form-text mb-0">Department-less events: {{ d.department_less_events }}</p>
+        </div>
+      </div>
+    </section>
+  }
+}

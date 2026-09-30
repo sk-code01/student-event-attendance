@@ -1,0 +1,81 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Discover events</h1>
+    <p class="page-subtitle">Browse what is on and register while the window is open.</p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/student/registrations" class="btn btn-outline-secondary btn-sm">My registrations</a>
+    <a routerLink="/recommendations" class="btn btn-outline-primary btn-sm">Recommended for you</a>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="grid-3" aria-hidden="true">
+    @for (slot of [0, 1, 2, 3, 4, 5]; track slot) {
+      <div class="card">
+        <div class="card-body">
+          <span class="skeleton skeleton-title"></span>
+          <span class="skeleton skeleton-text"></span>
+          <span class="skeleton skeleton-text"></span>
+        </div>
+      </div>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading events…</span>
+} @else if (events().length === 0) {
+  <app-empty-state
+    title="No events yet"
+    message="Nothing is open for registration right now. Check back — new events appear here as your department publishes them."
+    icon="calendar"
+  />
+} @else {
+  <div class="grid-3">
+    @for (event of events(); track event.id) {
+      <!-- The whole card is the link: a bigger target on touch, and one tab
+      stop per event rather than two. -->
+      <a
+        [routerLink]="['/student/events', event.id]"
+        class="card event-card is-interactive text-decoration-none"
+      >
+        <div class="card-body d-flex flex-column h-100">
+          <div class="event-card-top">
+            <span class="event-card-category">{{ event.category }}</span>
+            <span class="badge" [ngClass]="statusBadgeClass(event.status)">{{ event.status }}</span>
+          </div>
+
+          <h2 class="event-card-title">{{ event.title }}</h2>
+
+          <dl class="event-card-meta">
+            <div>
+              <dt class="sr-only">Date</dt>
+              <dd>{{ event.event_date | date: 'EEE d MMM y' }}</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Venue</dt>
+              <dd>{{ event.venue }}</dd>
+            </div>
+            <div>
+              <dt class="sr-only">Conducting college</dt>
+              <dd>{{ event.conducting_college.name }}</dd>
+            </div>
+          </dl>
+
+          <div class="event-card-foot mt-auto">
+            @if (event.my_registration_status === 'REGISTERED') {
+              <span class="badge text-bg-success">You are registered</span>
+            } @else if (event.is_registration_open) {
+              <span class="badge text-bg-primary">Registration open</span>
+            } @else {
+              <span class="badge text-bg-secondary">Registration closed</span>
+            }
+            <span class="event-card-cta" aria-hidden="true">View details &rarr;</span>
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+}

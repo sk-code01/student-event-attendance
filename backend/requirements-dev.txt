@@ -1,0 +1,15 @@
+-r requirements.txt
+
+# Testing
+pytest==8.3.4
+pytest-django==4.9.0
+factory-boy==3.3.1
+# Reads generated PDFs back so report-content tests can assert on real text
+pypdf==5.1.0
+
+# Drives the real-HTTP lifecycle smoke test in tests/e2e/ against a running
+# server. Not used by the application or by pytest.
+requests==2.34.2
+
+# Code quality
+flake8==7.1.1

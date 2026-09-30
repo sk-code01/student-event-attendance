@@ -1,0 +1,68 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="card-body p-4 p-md-5">
+      <div class="auth-brand">
+        <span class="brand-mark" aria-hidden="true">SA</span>
+        <h1 class="auth-brand-name">SEAMS-AI</h1>
+        <p class="auth-brand-full">Student Event &amp; Attendance Management System with AI</p>
+      </div>
+
+      <h2 class="h5 mb-4 text-center">Sign in</h2>
+
+      @if (sessionNotice(); as notice) {
+        <!-- Stated as information rather than an error: the session ending on
+             schedule is the system working, not the user doing something wrong. -->
+        <div class="alert alert-warning" role="status">{{ notice }}</div>
+      }
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="mb-3">
+          <label for="username" class="form-label">Username / User ID</label>
+          <input
+            id="username"
+            type="text"
+            class="form-control"
+            formControlName="username"
+            autocomplete="username"
+            [class.is-invalid]="form.controls.username.invalid && form.controls.username.touched"
+          />
+          @if (form.controls.username.invalid && form.controls.username.touched) {
+            <div class="invalid-feedback">Username is required.</div>
+          }
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="form-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="form-control"
+            formControlName="password"
+            autocomplete="current-password"
+            [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched"
+          />
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <div class="invalid-feedback">Password is required.</div>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            Signing in&hellip;
+          } @else {
+            Sign in
+          }
+        </button>
+      </form>
+
+      <p class="text-center small text-muted mt-4 mb-0">
+        Don't have an account? <a routerLink="/register">Register</a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,417 @@
+/* =========================================================================
+   SEAMS-AI — Application shell, sidebar, header
+   ========================================================================= */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100dvh;
+  transition: grid-template-columns var(--dur-normal) var(--ease-out);
+}
+.app-shell.is-collapsed { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+
+/* `minmax(0, 1fr)` above is what stops a wide table from stretching the grid
+   track and pushing the page sideways — without it the column would size to
+   its content and the whole document would scroll horizontally. */
+
+/* ------------------------------------------------------------- SIDEBAR --- */
+
+.app-sidebar {
+  grid-column: 1;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  /* A vertical wash rather than a flat fill: the rail reads as a panel set
+     into the page instead of a differently-coloured rectangle. */
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--accent) 6%, var(--nav-bg)) 0%,
+      var(--nav-bg) 32%,
+      var(--nav-bg) 100%
+    );
+  border-right: 1px solid var(--nav-border);
+  /* The lit inner edge is what separates the rail from the content when a
+     shadow would be invisible against navy. */
+  box-shadow: inset -1px 0 0 0 rgb(255 255 255 / 0.03);
+  z-index: var(--z-sidebar);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  transition: background-color var(--dur-normal) var(--ease-out),
+              border-color var(--dur-normal) var(--ease-out);
+}
+/* The sidebar is opaque by design, so there is nothing behind it to blur.
+   Declaring the filter anyway would still promote a full-height element to
+   its own layer on every route change. */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--nav-radius);
+  color: var(--text-1);
+  text-decoration: none;
+  min-height: 2.75rem;
+}
+.brand:hover { color: var(--text-1); }
+
+.brand-mark {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--accent-contrast);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  letter-spacing: -0.04em;
+  box-shadow:
+    0 2px 10px -3px color-mix(in oklab, var(--accent) 70%, transparent),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.28);
+}
+
+/* The wordmark carries the brand gradient, with a plain-colour fallback for
+   engines without background-clip: text — the name must never disappear. */
+.brand-name {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .brand-name { background: none; color: var(--text-1); }
+}
+
+.brand-text { min-width: 0; }
+.brand-name {
+  display: block;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-md);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.brand-role {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  white-space: nowrap;
+}
+
+.nav-section { margin-top: var(--space-3); }
+.nav-section-label {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.nav-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.nav-link-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.5625rem var(--space-3);
+  border-radius: var(--nav-radius);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  position: relative;
+  transition: var(--transition-colors), box-shadow var(--dur-fast) var(--ease-out);
+}
+.nav-link-item:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+/* The active item is a gradient pill with a lit leading edge. The edge is
+   what makes it findable at a glance down a long list; the gradient is what
+   ties it to the rest of the product's accent language. */
+.nav-link-item.is-active {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent) 24%, transparent) 0%,
+    color-mix(in oklab, var(--accent) 6%, transparent) 100%
+  );
+  box-shadow: var(--nav-active-glow);
+  color: var(--text-1);
+  font-weight: var(--weight-semibold);
+}
+.nav-link-item.is-active .nav-icon { color: var(--accent); }
+
+.nav-icon {
+  flex: 0 0 auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: grid;
+  place-items: center;
+}
+.nav-icon svg { width: 100%; height: 100%; display: block; }
+.nav-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 1.25rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: #fff;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  text-align: center;
+}
+
+.sidebar-footer { margin-top: auto; padding-top: var(--space-3); }
+
+/* --- Collapsed (desktop): icons only, and clicking one navigates ---------
+   No hover-expand and no tooltip dependency: the link is still a link, it
+   simply shows its icon. The accessible name comes from .nav-label, which is
+   visually hidden rather than removed. */
+.app-shell.is-collapsed .app-sidebar { padding-inline: var(--space-2); align-items: stretch; }
+.app-shell.is-collapsed .nav-link-item { justify-content: center; padding-inline: var(--space-2); }
+.app-shell.is-collapsed .nav-label,
+.app-shell.is-collapsed .brand-text,
+.app-shell.is-collapsed .nav-section-label {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.app-shell.is-collapsed .brand { justify-content: center; }
+.app-shell.is-collapsed .nav-badge {
+  position: absolute;
+  top: 4px; right: 6px;
+  margin: 0;
+  min-width: 0.9rem;
+  padding: 0 0.22rem;
+  font-size: 0.5625rem;
+}
+.app-shell.is-collapsed .nav-section-label { padding: 0; }
+.app-shell.is-collapsed .nav-section { margin-top: var(--space-2); border-top: 1px solid var(--border-subtle); padding-top: var(--space-2); }
+
+/* -------------------------------------------------------------- HEADER --- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--header-h);
+  padding: var(--space-2) var(--page-pad-x);
+  background: color-mix(in oklab, var(--bg) 72%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+/* A hairline of accent light along the bottom of the header. It is the only
+   ornament on the bar, and it is what stops the blurred strip from reading as
+   a seam when content scrolls underneath it. */
+.app-header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--accent) 45%, transparent) 30%,
+    color-mix(in oklab, var(--accent-2) 45%, transparent) 70%,
+    transparent 100%
+  );
+  opacity: 0.7;
+  pointer-events: none;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .app-header { backdrop-filter: blur(12px) saturate(1.4); }
+}
+
+.header-greeting { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.header-hello {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  letter-spacing: var(--heading-tracking);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-context {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-colors);
+}
+.icon-btn:hover { background: var(--surface-3); color: var(--text-1); }
+.icon-btn svg { width: 1.125rem; height: 1.125rem; }
+
+.icon-btn-badge {
+  position: absolute;
+  top: 3px; right: 3px;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.22rem;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: var(--weight-bold);
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+/* Header search — collapses to an icon-width field on small screens rather
+   than disappearing, so the capability is never lost on mobile. */
+.header-search { position: relative; flex: 0 1 18rem; min-width: 0; }
+.header-search input {
+  width: 100%;
+  padding-left: 2.125rem;
+  background: var(--surface-2);
+  border-color: var(--border-control);
+}
+.header-search .search-icon {
+  position: absolute;
+  left: 0.6875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem; height: 1rem;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.avatar {
+  width: 2rem; height: 2rem;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--accent-contrast);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-xs);
+  flex: 0 0 auto;
+  box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.24), var(--glow-accent);
+}
+
+/* ---------------------------------------------------------------- MAIN --- */
+
+.app-main {
+  grid-column: 2;
+  min-width: 0;   /* again: lets wide children scroll, not the page */
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--page-pad-y) var(--page-pad-x) var(--space-16);
+}
+
+/* Every page arrives the same way. */
+.app-content > router-outlet + * {
+  display: block;
+  animation: rise-in var(--dur-normal) var(--ease-out) both;
+}
+
+/* The existing pages all wrap themselves in Bootstrap's .container with
+   vertical padding. Inside the shell that double-pads and caps the width
+   too early, so it is neutralised here — without editing 35 templates. */
+.app-content > .container,
+.app-content > * > .container { max-width: 100%; padding-left: 0; padding-right: 0; }
+.app-content .container.py-4,
+.app-content .container.py-5 { padding-top: 0 !important; padding-bottom: 0 !important; }
+
+/* ------------------------------------------------------- MOBILE NAV ------ */
+
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  z-index: var(--z-backdrop);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  animation: fade-in var(--dur-fast) var(--ease-out);
+}
+
+@media (max-width: 991.98px) {
+  .app-shell,
+  .app-shell.is-collapsed { grid-template-columns: minmax(0, 1fr); }
+
+  /* Full-screen menu, per the brief — not a bottom bar, not a narrow drawer. */
+  .app-sidebar {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    padding: var(--space-4) var(--page-pad-x) var(--space-8);
+    background: var(--surface-1);
+    border-right: 0;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform var(--dur-normal) var(--ease-out),
+                visibility var(--dur-normal) var(--ease-out);
+  }
+  .app-sidebar.is-open { transform: translateX(0); visibility: visible; }
+
+  .app-main { grid-column: 1; }
+
+  /* On mobile the sidebar is never the collapsed icon rail. */
+  .app-shell.is-collapsed .nav-label,
+  .app-shell.is-collapsed .brand-text,
+  .app-shell.is-collapsed .nav-section-label {
+    position: static;
+    width: auto; height: auto;
+    clip: auto; clip-path: none;
+  }
+  .app-shell.is-collapsed .nav-link-item { justify-content: flex-start; padding-inline: var(--space-3); }
+  .app-shell.is-collapsed .brand { justify-content: flex-start; }
+  .app-shell.is-collapsed .nav-badge { position: static; margin-left: auto; font-size: var(--text-2xs); padding: 0.05rem 0.35rem; }
+
+  .nav-link-item { padding-block: 0.75rem; font-size: var(--text-md); }
+}
+
+@media (min-width: 992px) {
+  .nav-scrim { display: none; }
+  .app-sidebar { transform: none !important; visibility: visible !important; }
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

@@ -1,0 +1,119 @@
+# nginx reverse proxy for the Smart Student Event Participation and
+# Attendance Management System.
+#
+# Copy to /etc/nginx/sites-available/ssepams, replace events.example.edu and
+# the certificate paths, then enable it and reload nginx.
+#
+# This configuration serves the Angular build and the Django API from ONE
+# origin, which is why frontend/src/environments/environment.prod.ts can use
+# the relative base URL '/api/v1'. A same-origin deployment also means the
+# browser makes no cross-origin request at all, so CORS never comes into play
+# for normal use.
+
+upstream ssepams_app {
+    server 127.0.0.1:8000;
+    keepalive 16;
+}
+
+# ---------------------------------------------------------------------------
+# HTTP -> HTTPS. HTTPS is not optional for this application: the browser only
+# exposes getUserMedia (camera) and getCurrentPosition (GPS) in a secure
+# context, so live participation capture simply does not work over plain HTTP.
+# ---------------------------------------------------------------------------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name events.example.edu;
+
+    # Leave ACME challenges reachable over HTTP so certificate renewal works.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name events.example.edu;
+
+    ssl_certificate     /etc/letsencrypt/live/events.example.edu/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/events.example.edu/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # A capture image is capped at 8 MB by MAX_CAPTURE_FILE_SIZE; allow a
+    # little more so an over-limit upload reaches Django's own validator and
+    # receives a clear 400 instead of nginx's opaque 413.
+    client_max_body_size 12m;
+
+    # Uploading an 8 MB photo over a phone's uplink can be slow.
+    client_body_timeout 120s;
+    proxy_read_timeout  120s;
+    proxy_send_timeout  120s;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # ----------------------------------------------------------------------
+    # API, Django admin, and Django's own static files (served by WhiteNoise
+    # inside the app, so there is no static rule to maintain here).
+    # ----------------------------------------------------------------------
+    location ~ ^/(api|admin|static)/ {
+        proxy_pass http://ssepams_app;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+
+        # SECURITY: this must be `set`, never `pass through`. Django trusts
+        # X-Forwarded-Proto (SECURE_PROXY_SSL_HEADER) to decide whether the
+        # original request was HTTPS. Using $scheme means the value always
+        # reflects how *this* proxy was reached, so a client-supplied header
+        # is overwritten and cannot be used to claim a plain HTTP request was
+        # secure.
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+
+        proxy_redirect off;
+    }
+
+    # ----------------------------------------------------------------------
+    # The Angular single-page application.
+    # ----------------------------------------------------------------------
+    root /var/www/ssepams;
+    index index.html;
+
+    # Hashed build output (outputHashing: "all") is immutable — cache it hard.
+    location ~* \.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # index.html must never be cached, or a browser keeps loading the previous
+    # deploy's script names after an update.
+    location = /index.html {
+        add_header Cache-Control "no-store";
+    }
+
+    # Angular client-side routing: any unmatched path is an app route, not a
+    # missing file, so it must fall through to index.html. The API and admin
+    # are matched by the block above and never reach here.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Nothing under Django's MEDIA_ROOT is ever served by nginx. Evidence is
+    # private and is only reachable through the authenticated, authorized API
+    # endpoint. There is deliberately no `location /media/` block here — do
+    # not add one.
+}

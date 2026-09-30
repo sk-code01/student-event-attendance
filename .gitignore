@@ -1,0 +1,54 @@
+# ---- Environment / secrets ----
+.env
+.env.*
+!.env.example
+backend/.env
+
+# ---- Python / Django ----
+backend/venv/
+backend/**/__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+# This project uses PostgreSQL/Neon only and has no SQLite fallback. The
+# pattern stays so a stale local file can never be committed by accident.
+backend/db.sqlite3
+# collectstatic output - regenerated on every deploy.
+backend/staticfiles/
+# Private evidence storage. Capture images must never enter version control.
+backend/media/
+# Opt-in rotating file logs (DJANGO_LOG_TO_FILE=True).
+backend/logs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---- Node / Angular ----
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+npm-debug.log*
+
+# ---- IDE / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
+
+# ---- Locally downloaded report exports ----
+# Reports are rendered in memory and streamed to the client; a file on disk is
+# somebody's download, never a build artefact worth committing.
+/exports/
+*.report.csv
+*.report.xlsx
+*.report.pdf
+
+# Database dumps. `dumpdata` output contains password hashes and, since refresh
+# tokens are blacklisted in the database, complete JWTs. Keep backups outside
+# the repository entirely; this is a backstop, not the plan.
+backups/
+*.dump

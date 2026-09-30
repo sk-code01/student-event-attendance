@@ -1,0 +1,232 @@
+<div class="capture-page">
+  <a routerLink="/student/events/{{ eventId }}" class="back-link">&larr; Back to event</a>
+
+  <div class="page-head">
+    <div class="page-head-titles">
+      <h1 class="page-title">{{ mode === 'RESUBMIT' ? 'Resubmit evidence' : 'Mark participation' }}</h1>
+      @if (eventTitleSignal()) {
+        <p class="page-subtitle">{{ eventTitleSignal() }}</p>
+      }
+    </div>
+  </div>
+
+  @if (mode === 'RESUBMIT' && resubmissionReason()) {
+    <div class="alert alert-warning" role="alert">
+      <strong>Faculty asked you to resubmit.</strong> {{ resubmissionReason() }}
+    </div>
+  }
+
+  <!-- Unconditionally in the DOM from the first render (never inside an
+  @if/@switch branch) so the #video ViewChild resolves during Angular's
+  normal ngAfterViewInit, well before any async eligibility/camera
+  logic runs — avoids a race where CameraService.start() would receive
+  an undefined element if the video tag only appeared once a later
+  state was reached. Visibility is controlled purely via [hidden]. -->
+  <div
+    class="capture-stage"
+    [hidden]="!(state() === 'READY_TO_CAPTURE' || state() === 'CAPTURE_PREVIEW' || state() === 'REVIEW' || state() === 'SUBMITTING')"
+  >
+    <video #video [hidden]="state() !== 'READY_TO_CAPTURE'" muted playsinline></video>
+
+    @if (state() === 'CAPTURE_PREVIEW' && currentPreview(); as preview) {
+      <img [src]="preview.previewUrl" alt="The photo you just captured, for review" />
+    }
+
+    <!-- Framing guide. Decorative only: it never gates or validates
+    anything, it just shows where to stand. -->
+    @if (state() === 'READY_TO_CAPTURE') {
+      <div class="capture-guide" aria-hidden="true"></div>
+      <span class="capture-live-badge">
+        <span class="capture-live-dot"></span> Live
+      </span>
+    }
+  </div>
+
+  <!-- ==================================================== STATUS PANEL ===
+  The conditions that decide whether a capture will be accepted, stated
+  before the shutter rather than as an error afterwards. -->
+  @if (state() === 'READY_TO_CAPTURE' || state() === 'CAPTURE_PREVIEW'
+  || state() === 'REVIEW' || state() === 'SUBMITTING') {
+    <ul class="capture-status" aria-label="Capture requirements">
+      <li class="capture-status-item is-ok">
+        <span class="capture-status-label">Camera</span>
+        <span class="capture-status-value">Live &middot; this website only</span>
+      </li>
+
+      <li
+        class="capture-status-item"
+        [class.is-ok]="gpsAccuracy() !== null && gpsAccuracy()! <= (eligibility()?.max_gps_accuracy_meters ?? 50)"
+        [class.is-bad]="gpsAccuracy() === null || gpsAccuracy()! > (eligibility()?.max_gps_accuracy_meters ?? 50)"
+      >
+        <span class="capture-status-label">Location</span>
+        <span class="capture-status-value">
+          @if (gpsAccuracy(); as accuracy) {
+            Accurate to {{ accuracy | number: '1.0-0' }} m
+            @if (accuracy > (eligibility()?.max_gps_accuracy_meters ?? 50)) {
+              &middot; needs {{ eligibility()?.max_gps_accuracy_meters ?? 50 }} m or better
+            }
+          } @else {
+            Not available
+          }
+        </span>
+      </li>
+
+      <li class="capture-status-item is-ok">
+        <span class="capture-status-label">Event date</span>
+        <span class="capture-status-value">Today &middot; the only date this counts</span>
+      </li>
+    </ul>
+
+    @if (gpsAccuracy() !== null && gpsAccuracy()! > (eligibility()?.max_gps_accuracy_meters ?? 50)) {
+      <div class="alert alert-warning" role="alert">
+        Your location is not precise enough yet. Move outside or near a window and wait a moment —
+        submission stays blocked until the accuracy improves.
+      </div>
+    }
+  }
+
+  @switch (state()) {
+    @case ('CHECKING_ELIGIBILITY') {
+      <p class="text-muted small" role="status">Checking whether you can capture for this event&hellip;</p>
+    }
+
+    @case ('NOT_ELIGIBLE') {
+      <div class="alert alert-warning" role="alert">{{ eligibility()?.reason }}</div>
+      <a routerLink="/student/events/{{ eventId }}" class="btn btn-outline-secondary btn-sm">Back to event</a>
+    }
+
+    @case ('CAMERA_PERMISSION_REQUIRED') {
+      <div class="alert alert-info" role="status">
+        <strong>Allow camera access.</strong> Your browser will ask for permission. Participation evidence
+        is taken live here — a photo from your gallery cannot be used.
+      </div>
+    }
+
+    @case ('LOCATION_PERMISSION_REQUIRED') {
+      <div class="alert alert-info" role="status">
+        <strong>Allow location access.</strong> Your location is recorded with the photo so your Faculty can
+        see where it was taken. Without it, the capture cannot be submitted.
+      </div>
+    }
+
+    @case ('LOCATION_ACQUIRING') {
+      <p class="text-muted small" role="status">
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        Getting a location fix&hellip;
+      </p>
+    }
+
+    @case ('ERROR') {
+      <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+      <a routerLink="/student/events/{{ eventId }}" class="btn btn-outline-secondary btn-sm">Back to event</a>
+    }
+
+    @case ('OFFLINE_QUEUED') {
+      <div class="alert alert-info" role="status">
+        <strong>You are offline.</strong> Your capture is saved on this device and will upload by itself once
+        you are back online. Do not clear your browser data before it syncs.
+      </div>
+      <a routerLink="/student/participation" class="btn btn-outline-secondary btn-sm">View my participation</a>
+    }
+
+    @case ('SUBMITTED') {
+      <div class="alert alert-success" role="status">
+        <strong>Submitted.</strong> Your Faculty will review it and you will be notified of the decision.
+      </div>
+      <a routerLink="/student/participation" class="btn btn-primary btn-sm">View my participation</a>
+    }
+
+    @default {
+      <!-- READY_TO_CAPTURE, CAPTURE_PREVIEW, REVIEW, SUBMITTING -->
+      @if (state() === 'READY_TO_CAPTURE') {
+        <p class="capture-hint">
+          Stand so that <strong>you</strong> and the <strong>event or venue behind you</strong> are both
+          visible. Your Faculty reviews this photo. You can retake it as many times as you like.
+        </p>
+        <div class="capture-actions">
+          @if (!pendingPrimary()) {
+            <button type="button" class="btn btn-primary btn-lg" (click)="captureImage('PRIMARY')">
+              Capture primary photo
+            </button>
+          } @else {
+            <button type="button" class="btn btn-outline-primary" (click)="captureImage('ADDITIONAL')">
+              Capture another photo
+            </button>
+            <button type="button" class="btn btn-primary" (click)="state.set('REVIEW')">
+              Review &amp; submit
+            </button>
+          }
+        </div>
+        @if (!pendingPrimary()) {
+          <p class="form-text">One primary photo is required. More are optional.</p>
+        }
+      }
+
+      @if (state() === 'CAPTURE_PREVIEW') {
+        <div class="capture-actions">
+          <button type="button" class="btn btn-outline-secondary" (click)="retake()">Retake</button>
+          <button type="button" class="btn btn-primary" (click)="confirmCapture()">Use this photo</button>
+        </div>
+        <p class="form-text">Not happy with it? Retake as many times as you need — nothing is sent until you submit.</p>
+      }
+
+      @if (state() === 'REVIEW' || state() === 'SUBMITTING') {
+        <div class="section-head">
+          <h2 class="section-title">Review before submitting</h2>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+        }
+
+        <div class="capture-thumbs">
+          @if (pendingPrimary(); as primary) {
+            <figure class="capture-thumb">
+              <img [src]="primary.previewUrl" alt="Primary capture" />
+              <figcaption><span class="badge text-bg-primary">Primary</span></figcaption>
+            </figure>
+          }
+          @for (capture of pendingAdditional(); track $index) {
+            <figure class="capture-thumb">
+              <img [src]="capture.previewUrl" alt="Additional capture {{ $index + 1 }}" />
+              <figcaption><span class="badge text-bg-secondary">Additional</span></figcaption>
+              <button
+                type="button"
+                class="btn btn-sm btn-danger capture-thumb-remove"
+                [attr.aria-label]="'Remove additional capture ' + ($index + 1)"
+                (click)="removeAdditional($index)"
+                [disabled]="state() === 'SUBMITTING'"
+              >
+                &times;
+              </button>
+            </figure>
+          }
+        </div>
+
+        <div class="capture-actions">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="captureAnother()"
+            [disabled]="state() === 'SUBMITTING'"
+          >
+            Capture another
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="submit()"
+            [disabled]="state() === 'SUBMITTING'"
+          >
+            @if (state() === 'SUBMITTING') {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              Submitting&hellip;
+            } @else {
+              Submit participation
+            }
+          </button>
+        </div>
+      }
+    }
+  }
+</div>

@@ -1,0 +1,153 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">System Control</h1>
+    <p class="page-subtitle">
+      System-wide configuration. Every action here is recorded in the audit trail.
+    </p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/admin/users" class="btn btn-primary btn-sm">User management</a>
+    <a routerLink="/audit" class="btn btn-outline-primary btn-sm">Audit log</a>
+  </div>
+</div>
+
+<div class="stat-grid is-dense mb-4">
+  <a routerLink="/admin/users" class="stat-card text-decoration-none">
+    <span class="stat-label">Accounts</span>
+    <span class="stat-value" style="font-size: var(--text-lg)">Users</span>
+  </a>
+  <a routerLink="/admin/colleges" class="stat-card text-decoration-none">
+    <span class="stat-label">Reference data</span>
+    <span class="stat-value" style="font-size: var(--text-lg)">Colleges</span>
+  </a>
+  <a routerLink="/admin/events" class="stat-card text-decoration-none">
+    <span class="stat-label">Lifecycle</span>
+    <span class="stat-value" style="font-size: var(--text-lg)">Events</span>
+  </a>
+  <a routerLink="/admin/attendance" class="stat-card text-decoration-none">
+    <span class="stat-label">Oversight</span>
+    <span class="stat-value" style="font-size: var(--text-lg)">Attendance</span>
+  </a>
+  <a routerLink="/admin/od" class="stat-card text-decoration-none">
+    <span class="stat-label">Oversight</span>
+    <span class="stat-value" style="font-size: var(--text-lg)">On-Duty</span>
+  </a>
+  <a routerLink="/admin/achievements" class="stat-card text-decoration-none">
+    <span class="stat-label">Oversight</span>
+    <span class="stat-value" style="font-size: var(--text-lg)">Achievements</span>
+  </a>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="section-title">Departments</h2>
+
+        @if (loadingDepartments()) {
+          <div aria-hidden="true">
+            @for (slot of [0, 1, 2, 3]; track slot) {
+              <span class="skeleton skeleton-text"></span>
+            }
+          </div>
+          <span class="sr-only" role="status">Loading&hellip;</span>
+        } @else {
+          <ul class="list-group list-group-flush mb-3">
+            @for (dept of departments(); track dept.id) {
+              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span>{{ dept.name }} <span class="text-muted small">({{ dept.code }})</span></span>
+                @if (!dept.is_active) {
+                  <span class="badge text-bg-secondary">inactive</span>
+                }
+              </li>
+            }
+            @empty {
+              <li class="list-group-item px-0 text-muted small">No departments yet.</li>
+            }
+          </ul>
+        }
+
+        @if (deptError()) {
+          <div class="alert alert-danger" role="alert">{{ deptError() }}</div>
+        }
+
+        <form [formGroup]="deptForm" (ngSubmit)="createDepartment()" novalidate>
+          <div class="row g-2">
+            <div class="col-7">
+              <input aria-label="Department name" class="form-control form-control-sm" placeholder="Department name" formControlName="name" />
+            </div>
+            <div class="col-3">
+              <input aria-label="Code" class="form-control form-control-sm" placeholder="Code" formControlName="code" />
+            </div>
+            <div class="col-2">
+              <button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="deptSubmitting()">Add</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="section-title">Provision an Event Coordinator</h2>
+        <p class="text-muted small">
+          An Event Coordinator is created immediately active — it does not go through the approval workflow.
+        </p>
+
+        @if (hodSuccess()) {
+          <div class="alert alert-success" role="status">{{ hodSuccess() }}</div>
+        }
+
+        <form [formGroup]="eventCoordinatorForm" (ngSubmit)="provisionEventCoordinator()" novalidate>
+          <div class="mb-2">
+            <select class="form-select form-select-sm" formControlName="department" aria-label="Department">
+              <option [ngValue]="null" disabled>Select department</option>
+              @for (dept of departments(); track dept.id) {
+                <option [ngValue]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+            @if (hodError()?.['department']) {
+              <div class="text-danger small mt-1">{{ hodError()!['department'] }}</div>
+            }
+          </div>
+          <div class="mb-2">
+            <input aria-label="Username" class="form-control form-control-sm" placeholder="Username" formControlName="username" />
+            @if (hodError()?.['username']) {
+              <div class="text-danger small mt-1">{{ hodError()!['username'] }}</div>
+            }
+          </div>
+          <div class="mb-2">
+            <input aria-label="Email" class="form-control form-control-sm" placeholder="Email" formControlName="email" />
+            @if (hodError()?.['email']) {
+              <div class="text-danger small mt-1">{{ hodError()!['email'] }}</div>
+            }
+          </div>
+          <div class="mb-2">
+            <input aria-label="Password"
+              type="password"
+              class="form-control form-control-sm"
+              placeholder="Password"
+              formControlName="password"
+            />
+          </div>
+          <div class="mb-2">
+            <input aria-label="Confirm password"
+              type="password"
+              class="form-control form-control-sm"
+              placeholder="Confirm password"
+              formControlName="confirm_password"
+            />
+            @if (eventCoordinatorForm.hasError('passwordMismatch') && eventCoordinatorForm.controls.confirm_password.touched) {
+              <div class="text-danger small mt-1">Passwords do not match.</div>
+            }
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary w-100" [disabled]="hodSubmitting()">
+            Provision Event Coordinator
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

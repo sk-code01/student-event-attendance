@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SEAMS-AI</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+        content="SEAMS-AI — Student Event & Attendance Management System with AI.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!--
+    Two families: Space Grotesk for display (headings, metrics), Inter for
+    reading (body, tables, forms). Preconnected so the handshake happens in
+    parallel with the bundle, and `display=swap` so text paints immediately in
+    the fallback rather than hanging on the network — a blocked or slow font
+    costs a reflow, never a blank screen.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+  >
+  <script>
+    /*
+     * Theme, applied before the first paint.
+     *
+     * ThemeService is the source of truth once Angular boots, but it cannot
+     * run before the browser paints — so a dark-theme user would see a white
+     * flash on every load. Reading the same key here and stamping the same
+     * attribute removes it. Kept deliberately tiny and dependency-free.
+     */
+    (function () {
+      try {
+        var stored = localStorage.getItem('seams_theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Mirrors ThemeService: an explicit choice wins, "system" follows the
+        // OS, and anything else (including a first visit) gets the product's
+        // default, which is dark.
+        var resolved = stored === 'light' || stored === 'dark'
+          ? stored
+          : (stored === 'system' ? (prefersDark ? 'dark' : 'light') : 'dark');
+        document.documentElement.setAttribute('data-theme', resolved);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

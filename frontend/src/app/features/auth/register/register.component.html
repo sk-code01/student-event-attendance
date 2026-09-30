@@ -1,0 +1,228 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="card-body p-4 p-md-5">
+      <div class="auth-brand">
+        <span class="brand-mark" aria-hidden="true">SA</span>
+        <h1 class="auth-brand-name">SEAMS-AI</h1>
+        <p class="auth-brand-full">Student Event &amp; Attendance Management System with AI</p>
+      </div>
+
+      @if (submitted()) {
+        <div class="text-center py-4">
+          <div class="empty-state-icon mx-auto" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.7-9.7a1 1 0 00-1.4-1.4L9 10.2 7.7 8.9a1 1 0 10-1.4 1.4l2 2a1 1 0 001.4 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <h2 class="h5 mb-2">Registration submitted</h2>
+          <p class="text-muted small mb-4">
+            Your account has been created and is <strong>pending Event Coordinator approval</strong>.
+            You will be able to sign in once your department Event Coordinator reviews your request.
+          </p>
+          <a routerLink="/login" class="btn btn-outline-primary">Back to sign in</a>
+        </div>
+      } @else {
+        <h2 class="h5 mb-1 text-center">Create an account</h2>
+        <p class="text-muted small text-center mb-4">Student and Faculty registrations require Event Coordinator approval.</p>
+
+        @if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="mb-3">
+            <label for="role" class="form-label">Role</label>
+            <select id="role" class="form-select" formControlName="role">
+              <option value="STUDENT">Student</option>
+              <option value="FACULTY">Faculty</option>
+              <option value="EVENT_COORDINATOR">Event Coordinator</option>
+            </select>
+            @if (form.controls.role.value === 'EVENT_COORDINATOR') {
+              <p class="form-text">
+                An Event Coordinator account is active as soon as it is created, and a department
+                can have only one.
+              </p>
+            }
+            @if (fieldErrors()['role']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['role'] }}</div>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label for="full_name" class="form-label">Full name</label>
+            <input
+              id="full_name"
+              type="text"
+              class="form-control"
+              formControlName="full_name"
+              autocomplete="name"
+              [class.is-invalid]="(form.controls.full_name.invalid && form.controls.full_name.touched) || fieldErrors()['full_name']"
+            />
+            @if (form.controls.full_name.touched && form.controls.full_name.hasError('required')) {
+              <div class="invalid-feedback">Full name is required.</div>
+            }
+            @if (fieldErrors()['full_name']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['full_name'] }}</div>
+            }
+          </div>
+
+          <!-- One identity field, chosen by role. A Student is issued a
+               university registration number; both faculty roles are issued
+               the college's Faculty ID. -->
+          @if (!isFacultyRole(form.controls.role.value)) {
+            <div class="mb-3">
+              <label for="university_registration_number" class="form-label">
+                University Registration Number (USN / UUCMS)
+              </label>
+              <input
+                id="university_registration_number"
+                type="text"
+                class="form-control"
+                formControlName="university_registration_number"
+                autocomplete="off"
+                [class.is-invalid]="(form.controls.university_registration_number.invalid && form.controls.university_registration_number.touched) || fieldErrors()['university_registration_number']"
+              />
+              <p class="form-text">
+                Enter your University Registration Number, USN, or UUCMS number.
+              </p>
+              @if (form.controls.university_registration_number.touched && form.controls.university_registration_number.hasError('required')) {
+                <div class="invalid-feedback">A university registration number is required.</div>
+              }
+              @if (fieldErrors()['university_registration_number']) {
+                <div class="invalid-feedback d-block">{{ fieldErrors()['university_registration_number'] }}</div>
+              }
+            </div>
+          }
+
+          @if (isFacultyRole(form.controls.role.value)) {
+            <div class="mb-3">
+              <label for="faculty_id" class="form-label">Faculty ID</label>
+              <input
+                id="faculty_id"
+                type="text"
+                class="form-control"
+                formControlName="faculty_id"
+                autocomplete="off"
+                [class.is-invalid]="(form.controls.faculty_id.invalid && form.controls.faculty_id.touched) || fieldErrors()['faculty_id']"
+              />
+              <p class="form-text">Enter the Faculty ID provided by your college.</p>
+              @if (form.controls.faculty_id.touched && form.controls.faculty_id.hasError('required')) {
+                <div class="invalid-feedback">A Faculty ID is required.</div>
+              }
+              @if (fieldErrors()['faculty_id']) {
+                <div class="invalid-feedback d-block">{{ fieldErrors()['faculty_id'] }}</div>
+              }
+            </div>
+          }
+
+          <div class="mb-3">
+            <label for="department" class="form-label">Department</label>
+            <select
+              id="department"
+              class="form-select"
+              formControlName="department"
+              [class.is-invalid]="form.controls.department.invalid && form.controls.department.touched"
+            >
+              <option [ngValue]="null" disabled>Select a department</option>
+              @for (dept of departments(); track dept.id) {
+                <option [ngValue]="dept.id">{{ dept.name }} ({{ dept.code }})</option>
+              }
+            </select>
+            @if (fieldErrors()['department']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['department'] }}</div>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label for="username" class="form-label">Username / User ID</label>
+            <input
+              id="username"
+              type="text"
+              class="form-control"
+              formControlName="username"
+              autocomplete="username"
+              placeholder="lowercase letters and numbers only"
+              [class.is-invalid]="(form.controls.username.invalid && form.controls.username.touched) || fieldErrors()['username']"
+            />
+            @if (form.controls.username.touched && form.controls.username.hasError('required')) {
+              <div class="invalid-feedback">Username is required.</div>
+            }
+            @if (form.controls.username.touched && form.controls.username.hasError('pattern')) {
+              <div class="invalid-feedback">Lowercase letters and numbers only.</div>
+            }
+            @if (fieldErrors()['username']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['username'] }}</div>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input
+              id="email"
+              type="email"
+              class="form-control"
+              formControlName="email"
+              autocomplete="email"
+              [class.is-invalid]="(form.controls.email.invalid && form.controls.email.touched) || fieldErrors()['email']"
+            />
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <div class="invalid-feedback">A valid email is required.</div>
+            }
+            @if (fieldErrors()['email']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['email'] }}</div>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input
+              id="password"
+              type="password"
+              class="form-control"
+              formControlName="password"
+              autocomplete="new-password"
+              [class.is-invalid]="(form.controls.password.invalid && form.controls.password.touched) || fieldErrors()['password']"
+            />
+            @if (form.controls.password.touched && form.controls.password.invalid) {
+              <div class="invalid-feedback">Password must be at least 8 characters.</div>
+            }
+            @if (fieldErrors()['password']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['password'] }}</div>
+            }
+          </div>
+
+          <div class="mb-4">
+            <label for="confirm_password" class="form-label">Confirm Password</label>
+            <input
+              id="confirm_password"
+              type="password"
+              class="form-control"
+              formControlName="confirm_password"
+              autocomplete="new-password"
+              [class.is-invalid]="(form.controls.confirm_password.touched && (form.hasError('passwordMismatch') || fieldErrors()['confirm_password']))"
+            />
+            @if (form.controls.confirm_password.touched && form.hasError('passwordMismatch')) {
+              <div class="invalid-feedback d-block">Passwords do not match.</div>
+            }
+            @if (fieldErrors()['confirm_password']) {
+              <div class="invalid-feedback d-block">{{ fieldErrors()['confirm_password'] }}</div>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="loading()">
+            @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              Submitting&hellip;
+            } @else {
+              Register
+            }
+          </button>
+        </form>
+
+        <p class="text-center small text-muted mt-4 mb-0">
+          Already have an account? <a routerLink="/login">Sign in</a>
+        </p>
+      }
+    </div>
+  </div>
+</div>

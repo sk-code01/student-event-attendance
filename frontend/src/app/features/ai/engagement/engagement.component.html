@@ -1,0 +1,150 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Engagement</h1>
+    <p class="page-subtitle">@if (isStudent()) { How your participation pattern groups with other students. } @else { How students in your scope group by participation activity. }</p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/dashboard" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="load()">Refresh</button>
+  </div>
+</div>
+
+<app-ai-disclaimer [text]="response()?.disclaimer" />
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading engagement clusters&hellip;</span>
+} @else if (response(); as data) {
+  @if (!data.available) {
+    <div class="alert alert-warning" role="alert">
+      <strong>Engagement clusters unavailable.</strong> {{ unavailableMessage(data) }}
+    </div>
+  } @else {
+    @if (data.note) {
+      <div class="alert alert-info" role="status">{{ data.note }}</div>
+    }
+
+    <!-- Student: own label only -->
+    @if (data.own !== undefined) {
+      @if (data.own) {
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <span class="badge fs-6" [class]="engagementClass(data.own.label)">{{ data.own.label }}</span>
+              <span class="fw-semibold">Your engagement cluster</span>
+            </div>
+            <p class="small mb-2">{{ data.own.explanation }}</p>
+            <div class="small text-muted">
+              @for (entry of featureEntries(data.own.features); track entry.name) {
+                <span class="me-3">{{ entry.name }}: <strong>{{ entry.value | number: '1.0-2' }}</strong></span>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="alert alert-secondary" role="status">No engagement label is available for your account yet.</div>
+      }
+    }
+
+    <!-- Staff: distribution inside the caller's scope -->
+    @if (data.distribution) {
+      <h2 class="section-title">Distribution
+        <span class="text-muted fw-normal">({{ data.scoped_students }} student{{ data.scoped_students === 1 ? '' : 's' }} in your scope)</span>
+      </h2>
+      @if ((data.scoped_students ?? 0) === 0) {
+        <p class="text-muted small">No students in your scope.</p>
+      } @else {
+        <div class="row g-3 mb-4">
+          @for (row of distributionRows(data); track row.label) {
+            <div class="col-4">
+              <div class="card h-100">
+                <div class="card-body py-3">
+                  <span class="badge mb-2" [class]="engagementClass(row.label)">{{ row.label }}</span>
+                  <div class="h3 mb-0">{{ row.count }}</div>
+                  <div class="small text-muted">{{ row.percent }}%</div>
+                  <div class="progress mt-2" style="height: 6px;">
+                    <div class="progress-bar" [class]="engagementClass(row.label)" [style.width.%]="row.percent"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <!-- Event Coordinator / Admin: per-student labels -->
+    @if (hasResults(data)) {
+      <h2 class="section-title">Students</h2>
+      <div class="table-card mb-4">
+        <div class="table-wrap">
+          <table class="table table-sm align-middle table-stack">
+            <thead>
+              <tr>
+                <th scope="col">Student</th>
+                <th scope="col">Cluster</th>
+                <th scope="col" class="text-end">Registrations</th>
+                <th scope="col" class="text-end">Participations</th>
+                <th scope="col" class="text-end">Verified</th>
+                <th scope="col" class="text-end">Attendance</th>
+                <th scope="col" class="text-end">OD</th>
+                <th scope="col" class="text-end">Achievements</th>
+                <th scope="col" class="text-end">Categories</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.results; track row.student_id) {
+                <tr>
+                  <td data-label="Student">{{ row.student ?? '—' }}</td>
+                  <td data-label="Cluster"><span class="badge" [class]="engagementClass(row.label)">{{ row.label }}</span></td>
+                  <td data-label="Registrations" class="text-end">{{ feature(row.features, 'registrations') }}</td>
+                  <td data-label="Participations" class="text-end">{{ feature(row.features, 'participations') }}</td>
+                  <td data-label="Verified" class="text-end">{{ feature(row.features, 'verified') }}</td>
+                  <td data-label="Attendance" class="text-end">{{ feature(row.features, 'attendance_approved') }}</td>
+                  <td data-label="OD" class="text-end">{{ feature(row.features, 'od_approved') }}</td>
+                  <td data-label="Achievements" class="text-end">{{ feature(row.features, 'official_achievements') }}</td>
+                  <td data-label="Categories" class="text-end">{{ feature(row.features, 'category_diversity') }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else if (data.distribution && !isStudent()) {
+      <p class="text-muted small">Per-student labels are shown to Event Coordinator and Admin accounts only.</p>
+    }
+
+    <!-- How the labels were decided -->
+    @if (data.centroids && data.centroids.length > 0) {
+      <details class="small text-muted">
+        <summary>How the clusters are labelled</summary>
+        <p class="mt-2 mb-1">
+          {{ data.engagement_formula?.description }}
+          K = {{ data.k }} over {{ data.population?.n_samples }} students and {{ data.population?.n_features }} features.
+          Cluster ids from the algorithm carry no meaning; labels follow the ordered centroid scores below.
+        </p>
+        <ul class="mb-1">
+          @for (centroid of data.centroids; track centroid.label) {
+            <li>
+              <span class="badge" [class]="engagementClass(centroid.label)">{{ centroid.label }}</span>
+              centroid score {{ centroid.engagement_score | number: '1.0-2' }}
+            </li>
+          }
+        </ul>
+        <p class="mb-0">
+          Model: {{ data.model }} ({{ data.model_version }}) &middot; features {{ data.feature_version }}
+          &middot; computed in {{ data.inference_ms | number: '1.0-0' }} ms.
+          Labels describe a pattern of counts, not an academic judgment.
+        </p>
+      </details>
+    }
+  }
+}

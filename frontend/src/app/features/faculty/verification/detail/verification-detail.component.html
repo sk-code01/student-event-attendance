@@ -1,0 +1,111 @@
+<a routerLink="/faculty/verification" class="back-link">&larr; Back to queue</a>
+
+@if (errorMessage() && !evidence()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <p class="text-muted small mt-3">Loading&hellip;</p>
+} @else if (evidence(); as ev) {
+  <div class="page-head">
+    <div class="page-head-titles">
+      <h1 class="page-title">{{ ev.event.title }}</h1>
+      <p class="page-subtitle">{{ ev.student.full_name || ev.student.username }} @if (ev.student.university_registration_number) { &middot; {{ ev.student.university_registration_number }} } &middot; {{ ev.student.department ?? 'No department' }} &middot; {{ ev.event.event_date | date: 'mediumDate' }} &middot; {{ ev.event.venue }} &middot; {{ ev.event.category }} @if (ev.event.college) { &middot; {{ ev.event.college }} }</p>
+    </div>
+  </div>
+  <span class="badge mb-3" [ngClass]="{
+    'text-bg-info': ev.status === 'SUBMITTED' || ev.status === 'UNDER_REVIEW',
+    'text-bg-success': ev.status === 'VERIFIED',
+    'text-bg-danger': ev.status === 'REJECTED',
+    'text-bg-warning': ev.status === 'RESUBMISSION_REQUIRED'
+    }">{{ ev.status }}</span>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @for (version of ev.versions; track version.id; let isLast = $last) {
+    <div class="card mb-3" [class.border-primary]="isLast">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Version {{ version.version_number }} @if (isLast) { <span class="badge text-bg-primary ms-1">Current</span> }</span>
+        <span class="small text-muted">
+          @if (version.in_progress) { In progress } @else { Submitted {{ version.submitted_at | date: 'medium' }} }
+        </span>
+      </div>
+      <div class="card-body">
+        @if (version.submission_reason) {
+          <p class="small text-muted">Resubmission reason: {{ version.submission_reason }}</p>
+        }
+        <div class="row g-2 mb-3">
+          @for (capture of version.captures; track capture.id) {
+            <div class="col-4">
+              <app-secure-image [src]="capture.image_url" [alt]="capture.capture_role"></app-secure-image>
+              <span class="badge d-block mt-1" [ngClass]="capture.capture_role === 'PRIMARY' ? 'text-bg-primary' : 'text-bg-secondary'">
+                {{ capture.capture_role }}
+              </span>
+              <div class="small text-muted mt-1">
+                <div>Device: {{ capture.device_capture_timestamp | date: 'medium' }}</div>
+                <div>Server: {{ capture.server_received_timestamp | date: 'medium' }}</div>
+                <div>GPS: {{ capture.latitude }}, {{ capture.longitude }} (&plusmn;{{ capture.gps_accuracy }}m)</div>
+                @if (capture.venue_distance !== null) {
+                  <div [class.text-danger]="capture.location_warning">
+                    {{ capture.venue_distance | number: '1.0-0' }}m from venue
+                    @if (capture.location_warning) { &mdash; off-venue warning }
+                  </div>
+                }
+                <div class="text-truncate" title="{{ capture.sha256_hash }}">Hash: {{ capture.sha256_hash | slice: 0:16 }}&hellip;</div>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (version.verifications.length > 0) {
+          <h2 class="section-title">Decision history</h2>
+          <ul class="list-group list-group-flush mb-2">
+            @for (verification of version.verifications; track verification.id) {
+              <li class="list-group-item px-0 small">
+                <span class="badge" [ngClass]="verification.is_event_coordinator_override ? 'text-bg-dark' : 'text-bg-light text-dark border'">
+                  {{ verification.is_event_coordinator_override ? 'Event Coordinator OVERRIDE' : 'Faculty' }}
+                </span>
+                {{ decisionLabel(verification.decision) }} by {{ verification.reviewer.username }}
+                on {{ verification.created_at | date: 'medium' }}
+                @if (verification.reason) { &mdash; "{{ verification.reason }}" }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+  }
+
+  @if (canDecide()) {
+    <div class="card">
+      <div class="card-body">
+        <h2 class="section-title mb-3">Decision</h2>
+        @if (!pendingAction()) {
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success" (click)="startAction('VERIFY')">Verify</button>
+            <button type="button" class="btn btn-danger" (click)="startAction('REJECT')">Reject</button>
+            <button type="button" class="btn btn-warning" (click)="startAction('RESUBMIT')">Request Resubmission</button>
+          </div>
+        } @else {
+          <div class="mb-2">
+            <label class="form-label small" for="decision-reason">
+              Reason
+              @if (pendingAction() !== 'VERIFY') { <span class="text-danger">*</span> }
+              @else { <span class="text-muted">(optional)</span> }
+            </label>
+            <textarea id="decision-reason" class="form-control" rows="3" [(ngModel)]="reason" [disabled]="submitting()"></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" (click)="cancelAction()" [disabled]="submitting()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirmAction()" [disabled]="submitting()">
+              @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Confirm {{ pendingAction() === 'VERIFY' ? 'Verify' : pendingAction() === 'REJECT' ? 'Reject' : 'Request Resubmission' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+}

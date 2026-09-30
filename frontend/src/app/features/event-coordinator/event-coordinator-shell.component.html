@@ -1,0 +1,129 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Department Command</h1>
+    @if (authService.currentUser(); as user) {
+      <p class="page-subtitle">
+        {{ user.username }} &middot; {{ user.department?.name ?? 'No department' }}
+      </p>
+    }
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/event-coordinator/events/new" class="btn btn-primary btn-sm">Create event</a>
+    <a routerLink="/analytics" class="btn btn-outline-primary btn-sm">Department analytics</a>
+  </div>
+</div>
+
+<div class="section-head">
+  <h2 class="section-title">Approvals awaiting you</h2>
+</div>
+<div class="grid-2 mb-4">
+  <a routerLink="/event-coordinator/verification" class="card is-interactive text-decoration-none">
+    <div class="card-body">
+      <h3 class="card-title">Evidence &amp; overrides</h3>
+      <p class="card-text small mb-0">
+        Review department evidence and override a Faculty decision where the evidence warrants it.
+        An override never erases the original decision.
+      </p>
+    </div>
+  </a>
+  <a routerLink="/event-coordinator/attendance" class="card is-interactive text-decoration-none">
+    <div class="card-body">
+      <h3 class="card-title">Attendance approval</h3>
+      <p class="card-text small mb-0">Approve or reject attendance your Faculty have requested.</p>
+    </div>
+  </a>
+  <a routerLink="/event-coordinator/od" class="card is-interactive text-decoration-none">
+    <div class="card-body">
+      <h3 class="card-title">On-Duty approval</h3>
+      <p class="card-text small mb-0">
+        Decided independently of attendance — approving one never approves the other.
+      </p>
+    </div>
+  </a>
+  <a routerLink="/event-coordinator/achievements" class="card is-interactive text-decoration-none">
+    <div class="card-body">
+      <h3 class="card-title">Achievement approval</h3>
+      <p class="card-text small mb-0">Only approved achievements are official records.</p>
+    </div>
+  </a>
+</div>
+
+<h2 class="section-title">Pending registration requests</h2>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (requests().length === 0) {
+  <p class="text-muted small">No pending requests for your department.</p>
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-sm align-middle table-stack">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Requested</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (request of requests(); track request.id) {
+            <tr>
+              <td data-label="Username">{{ request.user.username }}</td>
+              <td data-label="Email">{{ request.user.email }}</td>
+              <td data-label="Role"><span class="badge text-bg-secondary">{{ request.role }}</span></td>
+              <td data-label="Requested" class="small text-muted">{{ request.requested_at | date: 'medium' }}</td>
+              <td class="text-end">
+                @if (rejectingId() === request.id) {
+                  <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <input aria-label="Rejection reason"
+                      type="text"
+                      class="form-control form-control-sm"
+                      style="max-width: 220px;"
+                      placeholder="Rejection reason"
+                      [(ngModel)]="rejectionReason"
+                      name="rejectionReason"
+                    />
+                    <button
+                      class="btn btn-sm btn-danger"
+                      [disabled]="actioningId() === request.id || !rejectionReason.trim()"
+                      (click)="confirmReject(request)"
+                    >
+                      Confirm
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" (click)="cancelReject()">Cancel</button>
+                  </div>
+                } @else {
+                  <button
+                    class="btn btn-sm btn-success me-2"
+                    [disabled]="actioningId() === request.id"
+                    (click)="approve(request)"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    [disabled]="actioningId() === request.id"
+                    (click)="startReject(request)"
+                  >
+                    Reject
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

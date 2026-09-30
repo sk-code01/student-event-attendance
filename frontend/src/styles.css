@@ -1,0 +1,24 @@
+/* =========================================================================
+   SEAMS-AI
+   Student Event & Attendance Management System with AI
+
+   Global stylesheet. Loaded after Bootstrap (see angular.json), so the
+   component layer below re-skins Bootstrap's classes in place — which is how
+   every existing page picks up the design system without its markup or its
+   bindings being touched.
+
+   Order matters:
+     tokens     -> primitives + light/dark semantic values
+     roles      -> per-role accent/radius/glass overrides
+     base       -> document defaults, aurora, focus, motion
+     components -> Bootstrap re-skin
+     layout     -> app shell, sidebar, header
+     patterns   -> stat cards, toasts, dialogs, skeletons, empty states
+   ========================================================================= */
+
+@import './styles/_tokens.css';
+@import './styles/_roles.css';
+@import './styles/_base.css';
+@import './styles/_components.css';
+@import './styles/_layout.css';
+@import './styles/_patterns.css';

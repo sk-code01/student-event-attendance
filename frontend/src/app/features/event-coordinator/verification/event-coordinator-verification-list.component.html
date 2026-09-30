@@ -1,0 +1,68 @@
+<a routerLink="/eventCoordinator" class="back-link">&larr; Back to Event Coordinator area</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Department Evidence Verification</h1>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (evidenceList().length === 0) {
+  <app-empty-state
+    title="No evidence yet"
+    message="Evidence submitted by students in your department will appear here once Faculty begin receiving it."
+    icon="inbox"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Event</th>
+            <th scope="col">Version</th>
+            <th scope="col">Status</th>
+            <th scope="col">Submitted</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (evidence of evidenceList(); track evidence.id) {
+            <tr>
+              <td data-label="Student">
+                {{ evidence.student.full_name || evidence.student.username }}
+                @if (evidence.student.university_registration_number) {
+                  <div class="small text-muted">{{ evidence.student.university_registration_number }}</div>
+                }
+              </td>
+              <td data-label="Event">{{ evidence.event.title }}</td>
+              <td data-label="Version">v{{ latestVersion(evidence)?.version_number }}</td>
+              <td data-label="Status">
+                <span class="badge" [ngClass]="{
+                  'text-bg-info': evidence.status === 'SUBMITTED' || evidence.status === 'UNDER_REVIEW',
+                  'text-bg-success': evidence.status === 'VERIFIED',
+                  'text-bg-danger': evidence.status === 'REJECTED',
+                  'text-bg-warning': evidence.status === 'RESUBMISSION_REQUIRED'
+                  }">{{ evidence.status }}</span>
+              </td>
+              <td data-label="Submitted" class="small text-muted">{{ latestVersion(evidence)?.submitted_at | date: 'medium' }}</td>
+              <td>
+                <a class="btn btn-sm btn-outline-primary" [routerLink]="['/event-coordinator/verification', evidence.id]">Review</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

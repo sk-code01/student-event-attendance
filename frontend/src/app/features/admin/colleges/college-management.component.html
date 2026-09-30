@@ -1,0 +1,102 @@
+<a routerLink="/admin" class="back-link">&larr; Back to dashboard</a>
+
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Colleges</h1>
+    <p class="page-subtitle">Institutions that can conduct events. Every event belongs to exactly one.</p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+<div class="grid-2">
+  <section>
+    <div class="section-head">
+      <h2 class="section-title">Registered colleges</h2>
+      @if (!loading()) {
+        <span class="text-muted small">{{ colleges().length }} total</span>
+      }
+    </div>
+
+    @if (loading()) {
+      <div aria-hidden="true">
+        @for (slot of [0, 1, 2, 3]; track slot) {
+          <span class="skeleton skeleton-text"></span>
+        }
+      </div>
+      <span class="sr-only" role="status">Loading colleges…</span>
+    } @else if (colleges().length === 0) {
+      <app-empty-state
+        title="No colleges yet"
+        message="Add the first college using the form beside this list. Events cannot be created until at least one exists."
+        icon="inbox"
+      />
+    } @else {
+      <ul class="list-group">
+        @for (college of colleges(); track college.id) {
+          <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+            <span>
+              {{ college.name }}
+              <span class="text-muted small">({{ college.code }})</span>
+            </span>
+            @if (!college.is_active) {
+              <span class="badge text-bg-secondary">Inactive</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2 class="section-title">Add a college</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+          <div class="mb-3">
+            <label class="form-label" for="college-name">College name</label>
+            <input
+              id="college-name"
+              class="form-control"
+              formControlName="name"
+              autocomplete="off"
+              [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid ? 'true' : null"
+            />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <p class="invalid-feedback d-block">A college name is required.</p>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="college-code">Short code</label>
+            <input
+              id="college-code"
+              class="form-control"
+              formControlName="code"
+              autocomplete="off"
+              [attr.aria-invalid]="form.controls.code.touched && form.controls.code.invalid ? 'true' : null"
+            />
+            <p class="form-text">A brief identifier shown alongside the name, for example ARY01.</p>
+            @if (form.controls.code.touched && form.controls.code.invalid) {
+              <p class="invalid-feedback d-block">A short code is required.</p>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              Adding…
+            } @else {
+              Add college
+            }
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>

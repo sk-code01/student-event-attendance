@@ -1,0 +1,101 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Notifications</h1>
+    <p class="page-subtitle">Everything the system has told you, newest first.</p>
+  </div>
+  <div class="page-head-actions">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="toggleUnreadOnly()">
+      {{ unreadOnly() ? 'Show all' : 'Show unread only' }}
+    </button>
+    <button
+      type="button"
+      class="btn btn-outline-primary btn-sm"
+      [disabled]="unreadCount() === 0"
+      (click)="markAllRead()"
+    >
+      Mark all read
+    </button>
+  </div>
+</div>
+<p class="text-muted small">
+  {{ unreadCount() }} unread &middot; {{ totalCount() }} total. Notifications are kept as a record and
+  cannot be deleted.
+</p>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (notifications().length === 0) {
+  <p class="text-muted small">
+    {{ unreadOnly() ? 'No unread notifications.' : 'No notifications yet.' }}
+  </p>
+} @else {
+  <ul class="list-group">
+    @for (notification of notifications(); track notification.id) {
+      <li class="list-group-item" [class.bg-light]="!notification.is_read">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-semibold">{{ notification.title }}</span>
+              <span class="badge" [class]="badgeClass(notification.notification_type)">
+                {{ notification.notification_type }}
+              </span>
+              @if (notification.priority === 'HIGH') {
+                <span class="badge text-bg-dark">High</span>
+              }
+              @if (!notification.is_read) {
+                <span class="badge text-bg-primary">Unread</span>
+              }
+            </div>
+            <div class="small mt-1">{{ notification.message }}</div>
+            <div class="small text-muted mt-1">{{ notification.created_at | date: 'medium' }}</div>
+          </div>
+          <div class="d-flex gap-1">
+            @if (notification.action_route) {
+              <button type="button" class="btn btn-sm btn-primary" (click)="open(notification)">
+                Open
+              </button>
+            }
+            @if (!notification.is_read) {
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                (click)="markRead(notification)"
+              >
+                Mark read
+              </button>
+            }
+          </div>
+        </div>
+      </li>
+    }
+  </ul>
+
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      [disabled]="!hasPrevious()"
+      (click)="previousPage()"
+    >
+      &larr; Previous
+    </button>
+    <span class="small text-muted">Page {{ page() }}</span>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm"
+      [disabled]="!hasNext()"
+      (click)="nextPage()"
+    >
+      Next &rarr;
+    </button>
+  </div>
+}

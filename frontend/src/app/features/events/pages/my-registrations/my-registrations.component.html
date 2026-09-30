@@ -1,0 +1,89 @@
+<a routerLink="/student/events" class="back-link">&larr; Back to events</a>
+
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">My registrations</h1>
+    <p class="page-subtitle">Everything you have signed up for, and whether you can still cancel.</p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/student/events" class="btn btn-outline-primary btn-sm">Find more events</a>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="table-card" aria-hidden="true">
+    <div class="p-3">
+      @for (slot of [0, 1, 2, 3]; track slot) {
+        <span class="skeleton skeleton-text"></span>
+      }
+    </div>
+  </div>
+  <span class="sr-only" role="status">Loading your registrations…</span>
+} @else if (registrations().length === 0) {
+  <app-empty-state
+    title="No registrations yet"
+    message="You haven't registered for any events. Browse what is on and register while the window is open."
+    icon="calendar"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Registered</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (registration of registrations(); track registration.id) {
+            <tr>
+              <td data-label="Event">
+                <span class="table-cell-value">
+                  <a [routerLink]="['/student/events', registration.event.id]">{{ registration.event.title }}</a>
+                  @if (registration.event.status === 'CANCELLED') {
+                    <span class="badge text-bg-danger ms-1">Event cancelled</span>
+                  }
+                </span>
+              </td>
+              <td data-label="Event date">
+                <span class="table-cell-value small text-muted">{{ registration.event.event_date | date: 'mediumDate' }}</span>
+              </td>
+              <td data-label="Status">
+                <span class="badge" [ngClass]="registration.status === 'REGISTERED' ? 'text-bg-info' : 'text-bg-secondary'">
+                  {{ registration.status }}
+                </span>
+              </td>
+              <td data-label="Registered">
+                <span class="table-cell-value small text-muted">{{ registration.registered_at | date: 'medium' }}</span>
+              </td>
+              <td>
+                @if (canCancel(registration)) {
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    [disabled]="cancellingId() === registration.id"
+                    (click)="cancel(registration)"
+                  >
+                    @if (cancellingId() === registration.id) {
+                      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                      Cancelling…
+                    } @else {
+                      Cancel<span class="sr-only"> registration for {{ registration.event.title }}</span>
+                    }
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

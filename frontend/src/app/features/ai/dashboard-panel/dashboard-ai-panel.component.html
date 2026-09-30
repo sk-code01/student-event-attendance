@@ -1,0 +1,127 @@
+<section class="mb-4 ai-section" aria-label="AI decision support">
+  <div class="section-head">
+    <h2 class="section-title">Insights</h2>
+    <!-- The chip is decorative: the sentence beside it is what actually tells
+         the reader what these numbers are, and screen readers get that. -->
+    <span class="ai-chip" aria-hidden="true">AI</span>
+    <span class="text-muted small">Decision support only — final decisions remain with Faculty/Event Coordinator.</span>
+  </div>
+
+  <div class="row g-3">
+    <!-- Recommendations (Student) -->
+    @if (isStudent()) {
+      <div class="col-md-6">
+        <div class="card ai-card h-100">
+          <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-semibold small">Recommended for you</span>
+              <a routerLink="/recommendations" class="small">See all</a>
+            </div>
+            @if (recommendationsError()) {
+              <p class="text-muted small mb-0">Recommendations could not be loaded.</p>
+            } @else if (recommendations(); as data) {
+              @if (!data.available) {
+                <p class="text-muted small mb-0">{{ reasonMessage(data.reason, data.detail) }}</p>
+              } @else if (data.results.length === 0) {
+                <p class="text-muted small mb-0">{{ reasonMessage(data.reason, data.detail) }}</p>
+              } @else {
+                @if (data.model === 'cold_start') {
+                  <p class="text-muted small mb-1">Starter picks — personalised once you take part in events.</p>
+                }
+                <ul class="list-unstyled small mb-0">
+                  @for (rec of data.results; track rec.event_id) {
+                    <li class="mb-1">
+                      <a [routerLink]="['/student/events', rec.event_id]">{{ rec.event.title }}</a>
+                      <span class="text-muted"> &middot; {{ rec.event.category || 'Uncategorised' }}</span>
+                      @if (rec.reasons.length > 0) {
+                        <div class="text-muted">{{ rec.reasons[0] }}</div>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            } @else {
+              <p class="text-muted small mb-0">Loading&hellip;</p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Engagement (all roles) -->
+    <div class="col-md-6">
+      <div class="card ai-card h-100">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold small">Engagement</span>
+            <a routerLink="/engagement" class="small">Details</a>
+          </div>
+          @if (engagementError()) {
+            <p class="text-muted small mb-0">Engagement clusters could not be loaded.</p>
+          } @else if (engagement(); as data) {
+            @if (!data.available) {
+              <p class="text-muted small mb-0">{{ reasonMessage(data.reason, data.detail) }}</p>
+            } @else if (data.own !== undefined) {
+              @if (data.own) {
+                <span class="badge fs-6" [class]="engagementClass(data.own.label)">{{ data.own.label }}</span>
+                <p class="text-muted small mt-2 mb-0">
+                  Your participation pattern groups with the {{ data.own.label }} engagement cluster.
+                  A pattern of counts, not a judgment.
+                </p>
+              } @else {
+                <p class="text-muted small mb-0">No engagement label yet.</p>
+              }
+            } @else if (data.distribution) {
+              <div class="d-flex gap-3">
+                @for (row of distributionRows(data); track row.label) {
+                  <div>
+                    <div class="h4 mb-0">{{ row.count }}</div>
+                    <span class="badge" [class]="engagementClass(row.label)">{{ row.label }}</span>
+                  </div>
+                }
+              </div>
+              <p class="text-muted small mt-2 mb-0">{{ data.scoped_students }} student{{ data.scoped_students === 1 ? '' : 's' }} in your scope.</p>
+            }
+          } @else {
+            <p class="text-muted small mb-0">Loading&hellip;</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk signals (staff) -->
+    @if (isStaff()) {
+      <div class="col-md-6">
+        <div class="card ai-card h-100">
+          <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-semibold small">Evidence risk signals</span>
+              <a routerLink="/anomalies" class="small">Review</a>
+            </div>
+            @if (anomaliesError()) {
+              <p class="text-muted small mb-0">Risk signals could not be loaded.</p>
+            } @else if (anomalies(); as data) {
+              @if (!data.available) {
+                <p class="text-muted small mb-0">{{ reasonMessage(data.reason, data.detail) }}</p>
+              } @else {
+                <div class="d-flex gap-3">
+                  @for (level of ['HIGH', 'MEDIUM', 'LOW']; track level) {
+                    <div>
+                      <div class="h4 mb-0">{{ summaryCount(data, level) }}</div>
+                      <span class="badge" [class]="levelClass(level)">{{ level }}</span>
+                    </div>
+                  }
+                </div>
+                <p class="text-muted small mt-2 mb-0">
+                  Records within your scope, by isolation level. A level is a prompt to look, not a finding.
+                </p>
+              }
+            } @else {
+              <p class="text-muted small mb-0">Loading&hellip;</p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>

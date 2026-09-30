@@ -1,0 +1,91 @@
+<a routerLink="/faculty" class="back-link">&larr; Back to Faculty area</a>
+
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Evidence Verification Queue</h1>
+    <p class="page-subtitle">Participation evidence waiting on your decision. Open one to review the photo, time and location.</p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="table-card" aria-hidden="true">
+    <div class="p-3">
+      @for (slot of [0, 1, 2, 3, 4]; track slot) {
+        <span class="skeleton skeleton-text"></span>
+      }
+    </div>
+  </div>
+  <span class="sr-only" role="status">Loading the verification queue…</span>
+} @else if (evidenceList().length === 0) {
+  <app-empty-state
+    title="Nothing to verify"
+    message="No evidence has been submitted for review yet. Submissions appear here as soon as students capture them."
+    icon="check"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">Version</th>
+            <th scope="col">Status</th>
+            <th scope="col">Submitted</th>
+            <th scope="col">Location</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (evidence of evidenceList(); track evidence.id) {
+            <tr>
+              <td data-label="Student">
+                <span class="table-cell-value">
+                  {{ evidence.student.full_name || evidence.student.username }}
+                  @if (evidence.student.university_registration_number) {
+                    <div class="small text-muted">{{ evidence.student.university_registration_number }}</div>
+                  }
+                  <span class="d-block small text-muted">{{ evidence.student.department }}</span>
+                </span>
+              </td>
+              <td data-label="Event"><span class="table-cell-value">{{ evidence.event.title }}</span></td>
+              <td data-label="Event date">
+                <span class="table-cell-value small text-muted">{{ evidence.event.event_date | date: 'mediumDate' }}</span>
+              </td>
+              <td data-label="Version"><span class="table-cell-value">v{{ latestVersion(evidence)?.version_number }}</span></td>
+              <td data-label="Status">
+                <span class="badge" [ngClass]="{
+                  'text-bg-info': evidence.status === 'SUBMITTED' || evidence.status === 'UNDER_REVIEW',
+                  'text-bg-success': evidence.status === 'VERIFIED',
+                  'text-bg-danger': evidence.status === 'REJECTED',
+                  'text-bg-warning': evidence.status === 'RESUBMISSION_REQUIRED'
+                  }">{{ evidence.status }}</span>
+              </td>
+              <td data-label="Submitted">
+                <span class="table-cell-value small text-muted">{{ latestVersion(evidence)?.submitted_at | date: 'medium' }}</span>
+              </td>
+              <td data-label="Location">
+                @if (hasLocationWarning(evidence)) {
+                  <span class="badge text-bg-warning">Off-venue</span>
+                } @else {
+                  <span class="table-cell-value small text-muted">Within range</span>
+                }
+              </td>
+              <td>
+                <a class="btn btn-sm btn-outline-primary" [routerLink]="['/faculty/verification', evidence.id]">
+                  Review<span class="sr-only"> evidence from {{ evidence.student.username }} for {{ evidence.event.title }}</span>
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

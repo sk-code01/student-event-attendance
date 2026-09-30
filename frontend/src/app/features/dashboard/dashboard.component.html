@@ -1,0 +1,172 @@
+<!-- The one place on the dashboard that carries the full visual treatment:
+     gradient mesh, glass and glow. Everything below it stays calm so the data
+     remains the thing being read (requirement 10). -->
+<section class="hero animate-scale" aria-labelledby="dashboard-title">
+  <div class="hero-aurora" aria-hidden="true"></div>
+
+  <div class="hero-body">
+    <div class="hero-titles">
+      <!-- Deliberately not a greeting: the header already carries one, and
+           repeating it here would spend the most prominent line on the page
+           saying nothing new. The date is what this line can add. -->
+      <p class="hero-eyebrow">
+        <span class="hero-pulse" aria-hidden="true"></span>
+        Live overview &middot; {{ today | date: 'EEEE d MMMM' }}
+      </p>
+      <h1 class="hero-title" id="dashboard-title">{{ dashboardTitle() }}</h1>
+      @if (authService.currentUser(); as user) {
+        <p class="hero-subtitle">
+          {{ user.username }} &middot; {{ roleLabel() }}
+          @if (user.department?.name) { &middot; {{ user.department?.name }} }
+        </p>
+      }
+    </div>
+
+    <div class="hero-actions">
+      <a [routerLink]="homeRoute()" class="btn btn-primary btn-sm">My area</a>
+      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="load()" [disabled]="loading()">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        }
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- A summary of what is already on the page, not new data: the counts come
+       from the same payload as the cards below. -->
+  @if (dashboard(); as data) {
+    @if (data.cards.length > 0) {
+      <dl class="hero-stats">
+        <div class="hero-stat">
+          <dt>Tracked totals</dt>
+          <dd>{{ data.cards.length }}</dd>
+        </div>
+        <div class="hero-stat">
+          <dt>Needing attention</dt>
+          <dd [class.is-live]="attentionCount() > 0">{{ attentionCount() }}</dd>
+        </div>
+        <div class="hero-stat">
+          <dt>Unread notifications</dt>
+          <dd [class.is-live]="data.unread_notifications > 0">{{ data.unread_notifications }}</dd>
+        </div>
+      </dl>
+    }
+  }
+</section>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <!-- Skeletons rather than a spinner: the shape of what is coming is more
+  useful than a generic "loading", and it stops the page jumping. -->
+  <div class="stat-grid" aria-hidden="true">
+    @for (placeholder of skeletonSlots; track placeholder) {
+      <span class="skeleton skeleton-card"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading your dashboard…</span>
+} @else if (dashboard(); as data) {
+  <!-- ===================================================== KPI CARDS === -->
+  @if (data.cards.length === 0) {
+    <app-empty-state
+      title="Nothing to show yet"
+      message="Your dashboard will fill in as you start using SEAMS-AI."
+    />
+  } @else {
+    <div class="stat-grid stagger-children">
+      @for (card of data.cards; track card.key) {
+        <a
+          [routerLink]="card.route"
+          [queryParams]="card.query"
+          class="stat-card"
+          [class.is-attention]="isAttention(card.key, card.value)"
+          [class.is-quiet]="card.value === 0"
+        >
+          <span class="stat-value" [title]="card.value">
+            <app-count-up [value]="card.value" />
+          </span>
+          <span class="stat-label">{{ card.label }}</span>
+        </a>
+      }
+    </div>
+  }
+
+  <!-- AI decision support: loads and fails independently of the counts. -->
+  <div class="section">
+    <app-dashboard-ai-panel />
+  </div>
+
+  <!-- ============================================ ACTIVITY + ALERTS === -->
+  <div class="section grid-2">
+    <section class="card" aria-labelledby="recent-notifications">
+      <div class="card-body">
+        <div class="section-head">
+          <h2 class="section-title" id="recent-notifications">
+            Recent notifications
+            @if (data.unread_notifications > 0) {
+              <span class="badge text-bg-danger ms-2">{{ data.unread_notifications }} unread</span>
+            }
+          </h2>
+          <a routerLink="/notifications" class="small">View all</a>
+        </div>
+
+        @if (data.recent_notifications.length === 0) {
+          <app-empty-state
+            title="No notifications"
+            message="You will be told here when something needs your attention."
+            icon="check"
+          />
+        } @else {
+          <ul class="list-group list-group-flush">
+            @for (notification of data.recent_notifications; track notification.id) {
+              <li class="list-group-item px-0" [class.bg-light]="!notification.is_read">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <span class="small fw-semibold">{{ notification.title }}</span>
+                  @if (!notification.is_read) {
+                    <span class="badge text-bg-primary">New</span>
+                  }
+                </div>
+                <div class="small text-muted">{{ notification.message }}</div>
+                <div class="small text-muted">{{ notification.created_at | date: 'short' }}</div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="recent-activity">
+      <div class="card-body">
+        <div class="section-head">
+          <h2 class="section-title" id="recent-activity">Recent activity</h2>
+        </div>
+
+        @if (data.recent_activity.length === 0) {
+          <app-empty-state
+            title="No recent activity"
+            message="Actions you take are recorded here."
+            icon="inbox"
+          />
+        } @else {
+          <ul class="list-group list-group-flush">
+            @for (record of data.recent_activity; track record.id) {
+              <li class="list-group-item px-0">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                  <span class="small fw-semibold">{{ record.action }}</span>
+                  <span class="small text-muted">{{ record.created_at | date: 'short' }}</span>
+                </div>
+                <div class="small text-muted">{{ record.description }}</div>
+                @if (record.actor) {
+                  <div class="small text-muted">by {{ record.actor.username }}</div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+  </div>
+}

@@ -1,0 +1,98 @@
+/* =========================================================================
+   SEAMS-AI — Accent identity
+
+   One visual system, shared by every role (requirement 16). The accent pair,
+   the aurora, the corner language and the card treatment are the product's
+   identity, not a per-role decoration: a Student and an Event Coordinator are
+   looking at the same application and it should look like it.
+
+   What differs between roles is *what the page shows* — which metrics matter,
+   which navigation exists, which actions are offered — and that lives in the
+   components and the navigation map, not here.
+
+   This file therefore defines the identity once on :root. The `[data-role]`
+   blocks that follow exist only to carry the small, genuinely role-specific
+   affordances, and are deliberately tiny. The attribute itself is kept
+   because navigation, tests and analytics key off it.
+
+   What nothing here may change: semantic status colours, spacing rhythm,
+   focus ring, or component structure. A rejection looks the same to every
+   role, and a form behaves the same way everywhere.
+   ========================================================================= */
+
+:root {
+  /* --- the accent pair -------------------------------------------------
+     Purple leads, electric blue answers. Gradients run between them and
+     into navy; nothing here reaches for a third hue, which is what keeps
+     the palette from turning into a rainbow. */
+  --accent:          var(--c-purple-600);
+  --accent-2:        var(--c-electric-500);
+  --accent-soft:     rgb(124 58 237 / 0.12);
+  --accent-contrast: #ffffff;
+
+  /* --- gradients (requirement 3) ---------------------------------------
+     Defined once so every surface that uses one uses the same one. */
+  --gradient-brand:    linear-gradient(135deg, var(--c-purple-600) 0%, var(--c-electric-500) 100%);
+  --gradient-deep:     linear-gradient(135deg, var(--c-navy-900) 0%, var(--c-purple-700) 100%);
+  --gradient-electric: linear-gradient(135deg, var(--c-navy-800) 0%, var(--c-electric-600) 100%);
+  --gradient-subtle:   linear-gradient(
+                         135deg,
+                         rgb(124 58 237 / 0.10) 0%,
+                         rgb(14 165 233 / 0.10) 100%
+                       );
+
+  /* --- ambient background ---------------------------------------------- */
+  --aurora-1: var(--c-purple-500);
+  --aurora-2: var(--c-electric-500);
+  --aurora-3: var(--c-navy-600);
+  --aurora-intensity: 1;
+
+  /* --- corner language --------------------------------------------------
+     One radius scale across the product. Cards are soft enough to feel
+     modern, controls slightly tighter so they read as interactive. */
+  --radius-card:    var(--radius-lg);
+  --radius-control: var(--radius-md);
+
+  /* --- card treatment ---------------------------------------------------
+     Solid by default. Glass is applied deliberately, by the `.glass` and
+     `.surface-glass` patterns, to the places requirement 9 names — never to
+     every card, and never behind dense data. */
+  --card-bg:        var(--surface-1);
+  --card-border:    var(--border);
+  --card-elevation: var(--shadow-sm);
+
+  /* --- typographic voice ------------------------------------------------ */
+  --heading-font:     var(--font-display);
+  --heading-weight:   600;
+  --heading-tracking: var(--tracking-tight);
+  --label-tracking:   var(--tracking-caps);
+  --label-transform:  uppercase;
+
+  /* --- sidebar ---------------------------------------------------------- */
+  --nav-bg:          var(--surface-1);
+  --nav-border:      var(--border);
+  --nav-active-bg:   var(--accent-soft);
+  --nav-active-fg:   var(--accent);
+  --nav-active-glow: inset 3px 0 0 0 var(--accent);
+}
+
+/* =========================================================================
+   Per-role affordances
+
+   Only what genuinely belongs to a role. Colour is not on this list.
+   ========================================================================= */
+
+/* The Admin console is the densest screen in the product, so it tightens its
+   corners a step — the one place where a sharper edge reads as "control
+   surface" rather than as an inconsistency. */
+[data-role='ADMIN'] {
+  --radius-card:    var(--radius-md);
+  --radius-control: var(--radius-sm);
+}
+
+/* Signed out: the ambient treatment runs above full strength. There is no
+   data on these screens for the background to compete with, and the login
+   page is the product's first impression. */
+[data-role='NONE'] {
+  --aurora-intensity: 1.15;
+}

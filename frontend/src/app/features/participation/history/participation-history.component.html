@@ -1,0 +1,108 @@
+<a routerLink="/student/events" class="back-link">&larr; Back to events</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">My participation</h1>
+    <p class="page-subtitle">Every capture you have submitted, and where it stands with your Faculty.</p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (queuedSessions().length > 0) {
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="section-title">Queued offline captures</h2>
+      <p class="text-muted small">
+        These were captured while offline and will upload automatically once you're back online.
+      </p>
+      <ul class="list-group list-group-flush">
+        @for (session of queuedSessions(); track session.id) {
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>
+              {{ session.eventTitle }}
+              <span class="badge ms-2" [ngClass]="{
+                'text-bg-warning': session.status === 'PENDING',
+                'text-bg-info': session.status === 'SYNCING',
+                'text-bg-danger': session.status === 'FAILED'
+                }">{{ session.status }}</span>
+              @if (session.lastError) {
+                <div class="text-danger small">{{ session.lastError }}</div>
+              }
+            </span>
+            @if (session.status === 'FAILED') {
+              <button class="btn btn-sm btn-outline-danger" (click)="discardQueued(session.id)">Discard</button>
+            }
+          </li>
+        }
+      </ul>
+      <button class="btn btn-sm btn-outline-primary mt-2" (click)="retrySync()">Retry now</button>
+    </div>
+  </div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (participations().length === 0) {
+  <app-empty-state
+    title="No participation yet"
+    message="Once you capture participation at an event it appears here, along with your Faculty's verification decision."
+    icon="camera"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Verification</th>
+            <th scope="col">Submitted</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (participation of participations(); track participation.id) {
+            <tr>
+              <td data-label="Event">{{ participation.event.title }}</td>
+              <td data-label="Event date" class="small text-muted">{{ participation.event.event_date | date: 'mediumDate' }}</td>
+              <td data-label="Status">
+                <span class="badge" [ngClass]="participation.status === 'SUBMITTED' ? 'text-bg-success' : 'text-bg-secondary'">
+                  {{ participation.status }}
+                </span>
+              </td>
+              <td data-label="Verification">
+                @if (participation.evidence_status; as evidenceStatus) {
+                  <span class="badge" [ngClass]="{
+                    'text-bg-success': evidenceStatus === 'VERIFIED',
+                    'text-bg-danger': evidenceStatus === 'REJECTED',
+                    'text-bg-warning': evidenceStatus === 'RESUBMISSION_REQUIRED',
+                    'text-bg-info': evidenceStatus === 'SUBMITTED' || evidenceStatus === 'UNDER_REVIEW'
+                    }">{{ evidenceStatus }}</span>
+                } @else {
+                  <span class="text-muted small">&mdash;</span>
+                }
+              </td>
+              <td data-label="Submitted" class="small text-muted">{{ participation.submitted_at | date: 'medium' }}</td>
+              <td>
+                @if (participation.evidence_status === 'RESUBMISSION_REQUIRED') {
+                  <a class="btn btn-sm btn-warning" [routerLink]="['/student/participation', participation.id, 'resubmit']">
+                    Resubmit
+                  </a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

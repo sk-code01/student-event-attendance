@@ -1,0 +1,403 @@
+<a routerLink="/admin" class="back-link">&larr; Back to Admin area</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">User Management</h1>
+    <p class="page-subtitle">Every account in the system. Admin only.</p>
+  </div>
+  <div class="page-head-actions">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="load()">Refresh</button>
+  </div>
+</div>
+
+<!-- Summary counts -->
+@if (stats(); as s) {
+  <div class="stat-grid">
+    <div class="stat-card">
+      <span class="stat-value"><app-count-up [value]="s.total" /></span>
+      <span class="stat-label">Total users</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value"><app-count-up [value]="s.active" /></span>
+      <span class="stat-label">Active</span>
+    </div>
+    <div class="stat-card" [class.is-attention]="s.inactive > 0">
+      <span class="stat-value"><app-count-up [value]="s.inactive" /></span>
+      <span class="stat-label">Inactive</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">By role</span>
+      <ul class="meta-list">
+        @for (role of roles; track role) {
+          <li class="meta-row">
+            <span class="meta-key">{{ role }}</span>
+            <span class="meta-val">{{ s.by_role[role] }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+}
+
+@if (errorMessage()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-start gap-2" role="alert">
+    <span>{{ errorMessage() }}</span>
+    <button type="button" class="btn-close btn-sm" aria-label="Dismiss" (click)="errorMessage.set(null)"></button>
+  </div>
+}
+@if (successMessage()) {
+  <div class="alert alert-success d-flex justify-content-between align-items-start gap-2" role="status">
+    <span>{{ successMessage() }}</span>
+    <button type="button" class="btn-close btn-sm" aria-label="Dismiss" (click)="successMessage.set(null)"></button>
+  </div>
+}
+
+<!-- Filters -->
+<form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter-bar">
+  <div class="toolbar-field" style="flex: 2 1 16rem;">
+    <label class="toolbar-label" for="user-search">Search</label>
+    <input
+      id="user-search"
+      type="search"
+      class="form-control form-control-sm"
+      formControlName="search"
+      placeholder="Username, email or name"
+    />
+  </div>
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="user-role">Role</label>
+    <select id="user-role" class="form-select form-select-sm" formControlName="role">
+      <option value="">All roles</option>
+      @for (role of roles; track role) {
+        <option [value]="role">{{ role }}</option>
+      }
+    </select>
+  </div>
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="user-department">Department</label>
+    <select id="user-department" class="form-select form-select-sm" formControlName="department">
+      <option value="">All departments</option>
+      <option value="none">No department</option>
+      @for (department of departments(); track department.id) {
+        <option [value]="department.id">{{ department.code }} &mdash; {{ department.name }}</option>
+      }
+    </select>
+  </div>
+  <div class="toolbar-field">
+    <label class="toolbar-label" for="user-status">Status</label>
+    <select id="user-status" class="form-select form-select-sm" formControlName="status">
+      <option value="all">All</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </div>
+  <div class="toolbar-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetFilters()">Clear</button>
+  </div>
+</form>
+
+<!-- User table -->
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (users().length === 0) {
+  <app-empty-state
+    title="No users match these filters"
+    message="Try a different role, department or search term. Clearing the filters shows every account."
+    icon="search"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-sm align-middle table-stack">
+        <caption class="small text-muted">
+          Showing {{ users().length }} of {{ total() }} user(s) &middot; page {{ page() }} of {{ totalPages() }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Email</th>
+            <th scope="col">Role</th>
+            <th scope="col">Department</th>
+            <th scope="col">Status</th>
+            <th scope="col">Joined</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr [class.table-light]="!user.is_active">
+              <td>
+                <span class="fw-semibold">{{ user.username }}</span>
+                @if (isSelf(user)) {
+                  <span class="badge text-bg-light border ms-1">you</span>
+                }
+                @if (user.full_name) {
+                  <div class="small text-muted">{{ user.full_name }}</div>
+                }
+                <!-- The identifier the institution uses to refer to this
+                     person, so the list can be scanned the way a registrar
+                     would scan it. -->
+                @if (user.university_registration_number) {
+                  <div class="small text-muted">{{ user.university_registration_number }}</div>
+                } @else if (user.faculty_id) {
+                  <div class="small text-muted">Faculty ID {{ user.faculty_id }}</div>
+                }
+              </td>
+              <td class="small">{{ user.email }}</td>
+              <td><span class="badge" [class]="roleBadgeClass(user.role)">{{ user.role }}</span></td>
+              <td class="small">
+                @if (user.department) {
+                  {{ user.department.code }}
+                  <div class="text-muted">{{ user.department.name }}</div>
+                } @else {
+                  <span class="text-muted">&mdash;</span>
+                }
+              </td>
+              <td>
+                @if (user.is_active) {
+                  <span class="badge text-bg-success">Active</span>
+                } @else {
+                  <span class="badge text-bg-warning">Inactive</span>
+                }
+              </td>
+              <td data-label="Joined" class="small text-muted text-nowrap">{{ user.date_joined | date: 'mediumDate' }}</td>
+              <td class="text-end">
+                <div class="d-flex flex-wrap gap-1 justify-content-end" role="group" [attr.aria-label]="'Actions for ' + user.username">
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openDetail(user)">Details</button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="openEdit(user)">Edit</button>
+                  @if (user.is_active) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      [disabled]="rowBusyId() === user.id || isSelf(user)"
+                      [title]="isSelf(user) ? 'You cannot deactivate your own account' : 'Deactivate this account'"
+                      (click)="setActive(user, false)"
+                    >
+                      Deactivate
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      [disabled]="rowBusyId() === user.id"
+                      (click)="setActive(user, true)"
+                    >
+                      Activate
+                    </button>
+                  }
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openPasswordReset(user)">
+                    Reset password
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <nav aria-label="User list pages">
+      <ul class="pagination pagination-sm">
+        <li class="page-item" [class.disabled]="page() <= 1">
+          <button type="button" class="page-link" (click)="goToPage(page() - 1)">Previous</button>
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link">Page {{ page() }} of {{ totalPages() }}</span>
+        </li>
+        <li class="page-item" [class.disabled]="page() >= totalPages()">
+          <button type="button" class="page-link" (click)="goToPage(page() + 1)">Next</button>
+        </li>
+      </ul>
+    </nav>
+  }
+}
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Panels. One at a time, rendered inline rather than in a modal so the  -->
+<!-- page stays usable without any JavaScript dialog dependency.          -->
+<!-- ------------------------------------------------------------------ -->
+@if (panel() !== 'none') {
+  <div class="card mt-4 border-primary">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <span class="fw-semibold small">
+        @switch (panel()) {
+          @case ('detail') { User details }
+          @case ('edit') { Edit user }
+          @case ('password') { Reset password }
+        }
+        @if (selected(); as user) {
+          &mdash; {{ user.username }}
+        }
+      </span>
+      <button type="button" class="btn-close btn-sm" aria-label="Close panel" (click)="closePanel()"></button>
+    </div>
+    <div class="card-body">
+      @if (panelBusy() && !selected()) {
+        <p class="text-muted small mb-0">Loading&hellip;</p>
+      }
+
+      @if (panelErrors(); as errors) {
+        <div class="alert alert-danger" role="alert">
+          <ul class="mb-0 ps-3">
+            @for (key of objectKeys(errors); track key) {
+              <li>{{ errors[key] }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (selected(); as user) {
+        <!-- Details ------------------------------------------------- -->
+        @if (panel() === 'detail') {
+          <dl class="row mb-0 small">
+            <dt class="col-sm-3">Username</dt>
+            <dd class="col-sm-9">{{ user.username }}</dd>
+            <dt class="col-sm-3">Full name</dt>
+            <dd class="col-sm-9">{{ user.full_name || '—' }}</dd>
+            @if (user.role === 'STUDENT') {
+              <dt class="col-sm-3">University Registration Number</dt>
+              <dd class="col-sm-9">{{ user.university_registration_number || '—' }}</dd>
+            } @else if (user.role === 'FACULTY' || user.role === 'EVENT_COORDINATOR') {
+              <dt class="col-sm-3">Faculty ID</dt>
+              <dd class="col-sm-9">{{ user.faculty_id || '—' }}</dd>
+            }
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">{{ user.email }}</dd>
+            <dt class="col-sm-3">Role</dt>
+            <dd class="col-sm-9">
+              <span class="badge" [class]="roleBadgeClass(user.role)">{{ user.role }}</span>
+              @if (user.is_superuser) {
+                <span class="badge text-bg-dark ms-1">Django superuser</span>
+              }
+            </dd>
+            <dt class="col-sm-3">Department</dt>
+            <dd class="col-sm-9">
+              @if (user.department) {
+                {{ user.department.code }} &mdash; {{ user.department.name }}
+              } @else {
+                <span class="text-muted">None (system-wide account)</span>
+              }
+            </dd>
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">{{ user.is_active ? 'Active' : 'Inactive' }}</dd>
+            <dt class="col-sm-3">Date joined</dt>
+            <dd class="col-sm-9">{{ user.date_joined | date: 'medium' }}</dd>
+            <dt class="col-sm-3">Last login</dt>
+            <dd class="col-sm-9">{{ user.last_login ? (user.last_login | date: 'medium') : 'Never' }}</dd>
+            @if (user.registration_request; as request) {
+              <dt class="col-sm-3">Registration</dt>
+              <dd class="col-sm-9">
+                {{ request.status }}
+                <div class="text-muted">
+                  Requested {{ request.requested_at | date: 'medium' }}
+                  @if (request.reviewed_by) {
+                    &middot; reviewed by {{ request.reviewed_by }}
+                  }
+                </div>
+                @if (request.rejection_reason) {
+                  <div class="text-muted">Reason: {{ request.rejection_reason }}</div>
+                }
+              </dd>
+            }
+          </dl>
+        }
+
+        <!-- Edit ---------------------------------------------------- -->
+        @if (panel() === 'edit') {
+          <form [formGroup]="editForm" (ngSubmit)="saveEdit()">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small" for="edit-email">Email</label>
+                <input id="edit-email" type="email" class="form-control form-control-sm" formControlName="email" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small" for="edit-first">First name</label>
+                <input id="edit-first" type="text" class="form-control form-control-sm" formControlName="first_name" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small" for="edit-last">Last name</label>
+                <input id="edit-last" type="text" class="form-control form-control-sm" formControlName="last_name" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small" for="edit-role">Role</label>
+                <select id="edit-role" class="form-select form-select-sm" formControlName="role">
+                  @for (role of roles; track role) {
+                    <option [value]="role">{{ role }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label small" for="edit-department">Department</label>
+                <select id="edit-department" class="form-select form-select-sm" formControlName="department">
+                  <option value="">No department</option>
+                  @for (department of departments(); track department.id) {
+                    <option [value]="department.id">{{ department.code }} &mdash; {{ department.name }}</option>
+                  }
+                </select>
+                <div class="form-text small">
+                  Student, Faculty and Event Coordinator accounts must belong to a department. A department may have only one
+                  active Event Coordinator &mdash; the server rejects a second one.
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="panelBusy()">
+                {{ panelBusy() ? 'Saving…' : 'Save changes' }}
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closePanel()">Cancel</button>
+            </div>
+          </form>
+        }
+
+        <!-- Password reset ------------------------------------------ -->
+        @if (panel() === 'password') {
+          <form [formGroup]="passwordForm" (ngSubmit)="submitPasswordReset()">
+            <p class="small text-muted">
+              Set a new password for <strong>{{ user.username }}</strong>. It is hashed on the server and is never
+              shown again. Any sessions this account already has are signed out.
+            </p>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small" for="reset-password">New password</label>
+                <input
+                  id="reset-password"
+                  type="password"
+                  autocomplete="new-password"
+                  class="form-control form-control-sm"
+                  formControlName="new_password"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small" for="reset-confirm">Confirm new password</label>
+                <input
+                  id="reset-confirm"
+                  type="password"
+                  autocomplete="new-password"
+                  class="form-control form-control-sm"
+                  formControlName="confirm_password"
+                />
+              </div>
+            </div>
+            @if (passwordForm.hasError('passwordMismatch') && passwordForm.dirty) {
+              <div class="form-text text-danger small">Passwords do not match.</div>
+            }
+            <div class="mt-3 d-flex gap-2">
+              <button type="submit" class="btn btn-danger btn-sm" [disabled]="panelBusy()">
+                {{ panelBusy() ? 'Updating…' : 'Reset password' }}
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closePanel()">Cancel</button>
+            </div>
+          </form>
+        }
+      }
+    </div>
+  </div>
+}

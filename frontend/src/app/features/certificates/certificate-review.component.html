@@ -1,0 +1,148 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Certificate review</h1>
+    <p class="page-subtitle">
+      @if (isFaculty()) {
+        Verify or reject the certificates students submit. A rejection must say why.
+      } @else {
+        Record the final decision on certificates Faculty have verified, and accept a rejected
+        certificate when a student has no attempts left.
+      }
+    </p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="table-card" aria-hidden="true">
+    <div class="p-3">
+      @for (slot of [0, 1, 2, 3]; track slot) {
+        <span class="skeleton skeleton-text"></span>
+      }
+    </div>
+  </div>
+  <span class="sr-only" role="status">Loading certificates&hellip;</span>
+} @else if (certificates().length === 0) {
+  <app-empty-state
+    title="No certificates yet"
+    message="Certificates appear here once students upload them, which they can do from the day after each event."
+    icon="inbox"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Event</th>
+            <th scope="col">Attempt</th>
+            <th scope="col">Faculty decision</th>
+            <th scope="col">Final decision</th>
+            <th scope="col">File</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (certificate of certificates(); track certificate.id) {
+            <tr>
+              <td data-label="Student">
+                <span class="table-cell-value">{{ studentName(certificate) }}</span>
+              </td>
+              <td data-label="Event">
+                <span class="table-cell-value">
+                  {{ certificate.event.title }}
+                  <span class="d-block small text-muted">
+                    {{ certificate.event.event_date | date: 'mediumDate' }}
+                  </span>
+                </span>
+              </td>
+              <td data-label="Attempt">
+                <span class="table-cell-value small">
+                  {{ certificate.attempt_number }} of
+                  {{ certificate.attempts_used + certificate.attempts_remaining }}
+                </span>
+              </td>
+
+              <td data-label="Faculty decision">
+                <span class="badge" [ngClass]="statusClass(certificate)">{{ certificate.status }}</span>
+                @if (certificate.rejection_reason) {
+                  <span class="d-block small text-muted mt-1">{{ certificate.rejection_reason }}</span>
+                }
+              </td>
+
+              <td data-label="Final decision">
+                @if (certificate.final_decision) {
+                  <span
+                    class="badge"
+                    [ngClass]="certificate.final_decision === 'ACCEPTED' ? 'text-bg-success' : 'text-bg-danger'"
+                  >{{ certificate.final_decision }}</span>
+                  @if (certificate.final_rejection_reason) {
+                    <span class="d-block small text-muted mt-1">{{ certificate.final_rejection_reason }}</span>
+                  }
+                } @else if (certificate.awaits_final_decision) {
+                  <span class="small text-muted">Awaiting Event Coordinator</span>
+                } @else {
+                  <span class="small text-muted">&mdash;</span>
+                }
+              </td>
+
+              <td data-label="File">
+                <a class="btn btn-sm btn-outline-secondary" [href]="certificate.download_url" target="_blank" rel="noopener">
+                  Download<span class="sr-only"> the certificate from {{ studentName(certificate) }}</span>
+                </a>
+              </td>
+
+              <td>
+                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                  @if (awaitingVerification(certificate)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      [disabled]="busyId() === certificate.id"
+                      (click)="verify(certificate)"
+                    >Verify</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      [disabled]="busyId() === certificate.id"
+                      (click)="reject(certificate)"
+                    >Reject</button>
+                  }
+
+                  @if (awaitingFinalDecision(certificate)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-success"
+                      [disabled]="busyId() === certificate.id"
+                      (click)="finalAccept(certificate)"
+                    >Accept</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      [disabled]="busyId() === certificate.id"
+                      (click)="finalReject(certificate)"
+                    >Reject</button>
+                  }
+
+                  @if (canAcceptExhausted(certificate)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      [disabled]="busyId() === certificate.id"
+                      (click)="acceptExhausted(certificate)"
+                      title="The student has used all three attempts and cannot resubmit"
+                    >Accept anyway</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

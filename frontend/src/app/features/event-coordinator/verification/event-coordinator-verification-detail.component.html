@@ -1,0 +1,104 @@
+<a routerLink="/event-coordinator/verification" class="back-link">&larr; Back to department queue</a>
+
+@if (errorMessage() && !evidence()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <p class="text-muted small mt-3">Loading&hellip;</p>
+} @else if (evidence(); as ev) {
+  <div class="page-head">
+    <div class="page-head-titles">
+      <h1 class="page-title">{{ ev.event.title }}</h1>
+      <p class="page-subtitle">{{ ev.student.full_name || ev.student.username }} @if (ev.student.university_registration_number) { &middot; {{ ev.student.university_registration_number }} } &middot; {{ ev.event.event_date | date: 'mediumDate' }} &middot; {{ ev.event.venue }}</p>
+    </div>
+  </div>
+  <span class="badge mb-3" [ngClass]="{
+    'text-bg-info': ev.status === 'SUBMITTED' || ev.status === 'UNDER_REVIEW',
+    'text-bg-success': ev.status === 'VERIFIED',
+    'text-bg-danger': ev.status === 'REJECTED',
+    'text-bg-warning': ev.status === 'RESUBMISSION_REQUIRED'
+    }">Effective status: {{ ev.status }}</span>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+  }
+
+  @if (latestVersion(); as version) {
+    <div class="card mb-3">
+      <div class="card-header">Current version — v{{ version.version_number }}</div>
+      <div class="card-body">
+        <div class="row g-2 mb-3">
+          @for (capture of version.captures; track capture.id) {
+            <div class="col-4">
+              <app-secure-image [src]="capture.image_url" [alt]="capture.capture_role"></app-secure-image>
+              <span class="badge d-block mt-1" [ngClass]="capture.capture_role === 'PRIMARY' ? 'text-bg-primary' : 'text-bg-secondary'">
+                {{ capture.capture_role }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <h2 class="section-title">Faculty decision</h2>
+        @if (facultyDecision(); as faculty) {
+          <div class="alert alert-secondary" role="status">
+            <strong>{{ decisionLabel(faculty.decision) }}</strong> by {{ faculty.reviewer.username }}
+            on {{ faculty.created_at | date: 'medium' }}
+            @if (faculty.reason) { &mdash; "{{ faculty.reason }}" }
+          </div>
+        } @else {
+          <p class="text-muted small">No Faculty decision has been recorded yet — an override is not possible until then.</p>
+        }
+
+        @if (hodOverrides().length > 0) {
+          <h2 class="section-title mt-3">Event Coordinator override history</h2>
+          <ul class="list-group list-group-flush mb-2">
+            @for (override of hodOverrides(); track override.id) {
+              <li class="list-group-item px-0 small">
+                <span class="badge text-bg-dark">OVERRIDE</span>
+                {{ decisionLabel(override.decision) }} by {{ override.reviewer.username }}
+                on {{ override.created_at | date: 'medium' }}
+                @if (override.reason) { &mdash; "{{ override.reason }}" }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    @if (canOverride()) {
+      <div class="card">
+        <div class="card-body">
+          <h2 class="section-title mb-3">Event Coordinator Override</h2>
+          <p class="text-muted small">
+            Overriding does not erase the Faculty decision above — it remains visible permanently, alongside
+            this override.
+          </p>
+          @if (!overriding()) {
+            <button type="button" class="btn btn-dark" (click)="startOverride()">Override Faculty Decision</button>
+          } @else {
+            <div class="mb-2">
+              <label class="form-label small" for="override-decision">New decision</label>
+              <select id="override-decision" class="form-select" [(ngModel)]="overrideDecision" [disabled]="submitting()">
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="RESUBMISSION_REQUIRED">Resubmission Required</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small" for="override-reason">Reason <span class="text-danger">*</span></label>
+              <textarea id="override-reason" class="form-control" rows="3" [(ngModel)]="overrideReason" [disabled]="submitting()"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-secondary" (click)="cancelOverride()" [disabled]="submitting()">Cancel</button>
+              <button type="button" class="btn btn-dark" (click)="confirmOverride()" [disabled]="submitting()">
+                @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Confirm Override
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+}

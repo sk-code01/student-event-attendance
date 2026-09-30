@@ -1,0 +1,76 @@
+<a routerLink="/faculty" class="back-link">&larr; Back to Faculty area</a>
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Attendance Requests</h1>
+    <p class="page-subtitle">Verified participations in your department. You request attendance; your Event Coordinator approves or rejects it. Attendance and OD are independent requests — raising one does not raise the other.</p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2, 3]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading&hellip;</span>
+} @else if (rows().length === 0) {
+  <app-empty-state
+    title="Nothing awaiting a request"
+    message="Attendance can only be requested for verified participation. Verify evidence in your queue and it will appear here."
+    icon="check"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">Attendance status</th>
+            <th scope="col">Reason (if rejected)</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.evidence.id) {
+            <tr>
+              <td data-label="Student">{{ row.evidence.student.username }}</td>
+              <td data-label="Event">{{ row.evidence.event.title }}</td>
+              <td data-label="Event date" class="small text-muted">{{ row.evidence.event.event_date | date: 'mediumDate' }}</td>
+              <td data-label="Attendance status">
+                @if (row.attendance) {
+                  <span class="badge" [class]="badgeClass(row.attendance.status)">{{ row.attendance.status }}</span>
+                } @else {
+                  <span class="text-muted small">Not requested</span>
+                }
+              </td>
+              <td data-label="Reason (if rejected)" class="small">{{ row.attendance?.rejection_reason || '—' }}</td>
+              <td>
+                @if (!row.attendance) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    [disabled]="submittingId() !== null"
+                    (click)="request(row)"
+                  >
+                    {{ submittingId() === row.evidence.id ? 'Requesting…' : 'Request Attendance' }}
+                  </button>
+                } @else if (row.attendance.status === 'PENDING') {
+                  <span class="small text-muted">Awaiting Event Coordinator decision</span>
+                } @else {
+                  <span class="small text-muted">Decided by {{ row.attendance.reviewed_by?.username ?? '—' }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

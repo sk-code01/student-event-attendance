@@ -1,0 +1,133 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Evidence risk signals</h1>
+    <p class="page-subtitle">Evidence records whose capture pattern is unusual compared with the rest of the population. A signal is a prompt to look more closely — it is not a finding, and it changes nothing.</p>
+  </div>
+  <div class="page-head-actions">
+    <a routerLink="/dashboard" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="load()">Refresh</button>
+  </div>
+</div>
+
+<app-ai-disclaimer [text]="response()?.disclaimer" />
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div aria-hidden="true">
+    @for (slot of [0, 1, 2]; track slot) {
+      <span class="skeleton skeleton-text"></span>
+    }
+  </div>
+  <span class="sr-only" role="status">Loading risk signals&hellip;</span>
+} @else if (response(); as data) {
+  @if (!data.available) {
+    <div class="alert alert-warning" role="alert">
+      <strong>Risk signals unavailable.</strong> {{ unavailableMessage(data) }}
+    </div>
+  } @else {
+    <!-- Summary and display filter -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <button type="button" class="btn btn-sm" [class.btn-dark]="levelFilter() === 'ALL'"
+        [class.btn-outline-dark]="levelFilter() !== 'ALL'" (click)="setFilter('ALL')">
+        All ({{ data.results.length }})
+      </button>
+      @for (level of LEVELS; track level) {
+        <button type="button" class="btn btn-sm" [class.btn-dark]="levelFilter() === level"
+          [class.btn-outline-dark]="levelFilter() !== level" (click)="setFilter(level)">
+          <span class="badge me-1" [class]="levelClass(level)">{{ level }}</span>{{ summaryCount(data, level) }}
+        </button>
+      }
+      <span class="text-muted small ms-auto">
+        Fitted on {{ data.population?.n_samples }} evidence record{{ data.population?.n_samples === 1 ? '' : 's' }}
+        system-wide; showing only those within your scope.
+      </span>
+    </div>
+
+    @if (data.results.length === 0) {
+      <app-empty-state
+        title="Nothing in your scope"
+        message="The model ran, but none of the evidence records it scored falls within what you are authorized to see."
+        icon="search"
+      />
+    } @else if (visibleRows().length === 0) {
+      <p class="text-muted small">No records at this level.</p>
+    } @else {
+      <div class="table-card mb-3">
+        <div class="table-wrap">
+          <table class="table table-sm align-middle table-stack">
+            <thead>
+              <tr>
+                <th scope="col">Level</th>
+                <th scope="col">Evidence</th>
+                <th scope="col">Student</th>
+                <th scope="col">Event</th>
+                <th scope="col">Decision so far</th>
+                <th scope="col" class="text-end">Score</th>
+                <th scope="col">Signals</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of visibleRows(); track row.evidence_id) {
+                <tr>
+                  <td data-label="Level"><span class="badge" [class]="levelClass(row.risk_level)">{{ row.risk_level }}</span></td>
+                  <td data-label="Evidence">#{{ row.evidence_id }}</td>
+                  <td data-label="Student">{{ row.student ?? '—' }}</td>
+                  <td data-label="Event">{{ row.event_title ?? '—' }}</td>
+                  <td data-label="Decision so far">
+                    <span class="badge" [class]="isPending(row) ? 'text-bg-warning' : 'text-bg-light border'">
+                      {{ row.effective_decision ?? '—' }}
+                    </span>
+                  </td>
+                  <td data-label="Score" class="text-end">{{ row.anomaly_score | number: '1.3-3' }}</td>
+                  <td data-label="Signals" class="small">
+                    @if (row.signals.length === 0) {
+                      <span class="text-muted">No individual feature crossed its stated threshold.</span>
+                    } @else {
+                      <ul class="mb-0 ps-3">
+                        @for (signal of row.signals; track signal) {
+                          <li>{{ signal }}</li>
+                        }
+                      </ul>
+                    }
+                  </td>
+                  <td class="text-end">
+                    @if (reviewLink(row); as link) {
+                      <a [routerLink]="link" class="btn btn-outline-primary btn-sm">Review</a>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <details class="small text-muted">
+      <summary>How the levels are decided</summary>
+      <p class="mt-2 mb-1">{{ data.thresholds?.rule }}</p>
+      <p class="mb-1">
+        Thresholds for this population: HIGH ≥ {{ data.thresholds?.high | number: '1.3-3' }},
+        MEDIUM ≥ {{ data.thresholds?.medium | number: '1.3-3' }}.
+        {{ data.score_basis }}
+      </p>
+      @if (data.feature_definitions) {
+        <p class="mb-1">Features used (none is the outcome of the record itself):</p>
+        <ul class="mb-1">
+          @for (feature of data.feature_definitions; track feature.name) {
+            <li>{{ feature.name }} <span class="badge text-bg-light border">{{ feature.temporal_status }}</span></li>
+          }
+        </ul>
+      }
+      <p class="mb-0">
+        Model: {{ data.model }} ({{ data.model_version }}) &middot; features {{ data.feature_version }}
+        &middot; computed in {{ data.inference_ms | number: '1.0-0' }} ms.
+        Reviewing a record is still done on the verification screen; this page has no approve or reject control.
+      </p>
+    </details>
+  }
+}

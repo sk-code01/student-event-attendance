@@ -1,0 +1,180 @@
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">Your account</h1>
+    <p class="page-subtitle">Your identity in SEAMS-AI, and your password.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- ============================================================ IDENTITY -->
+  <section class="card" aria-labelledby="identity-heading">
+    <div class="card-body">
+      <h2 class="section-title mb-3" id="identity-heading">Profile</h2>
+
+      @if (authService.currentUser(); as user) {
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <span class="avatar" style="width: 3rem; height: 3rem; font-size: var(--text-md)" aria-hidden="true">
+            {{ user.username.slice(0, 2).toUpperCase() }}
+          </span>
+          <div class="min-w-0">
+            <div style="font-size: var(--text-lg); font-weight: var(--weight-semibold)">
+              {{ user.full_name || user.username }}
+            </div>
+            <span class="badge text-bg-primary">{{ user.role }}</span>
+          </div>
+        </div>
+
+        <dl class="meta-list mb-0">
+          <div class="meta-row">
+            <dt class="meta-key">Username</dt>
+            <dd class="meta-val mb-0">{{ user.username }}</dd>
+          </div>
+          <div class="meta-row">
+            <dt class="meta-key">Email</dt>
+            <dd class="meta-val mb-0">{{ user.email }}</dd>
+          </div>
+          <div class="meta-row">
+            <dt class="meta-key">Role</dt>
+            <dd class="meta-val mb-0">{{ user.role }}</dd>
+          </div>
+
+          <!-- The institutional identifier, which differs by role: a Student
+               is issued a university registration number, and both faculty
+               roles the college's Faculty ID. Only the applicable one is
+               shown — an empty row for the other is noise, and showing both
+               invites confusing one identifier for the other. -->
+          <div class="meta-row">
+            @if (user.role === 'STUDENT') {
+              <dt class="meta-key">University Registration Number (USN / UUCMS)</dt>
+              <dd class="meta-val mb-0">
+                {{ user.university_registration_number || 'Not recorded' }}
+              </dd>
+            } @else if (user.role === 'FACULTY' || user.role === 'EVENT_COORDINATOR') {
+              <dt class="meta-key">Faculty ID</dt>
+              <dd class="meta-val mb-0">{{ user.faculty_id || 'Not recorded' }}</dd>
+            } @else {
+              <dt class="meta-key">Full name</dt>
+              <dd class="meta-val mb-0">{{ user.full_name || 'Not recorded' }}</dd>
+            }
+          </div>
+          <div class="meta-row">
+            <dt class="meta-key">Department</dt>
+            <dd class="meta-val mb-0">{{ user.department?.name ?? 'Not assigned' }}</dd>
+          </div>
+          <div class="meta-row">
+            <dt class="meta-key">Status</dt>
+            <dd class="meta-val mb-0">
+              @if (user.is_active) {
+                <span class="badge text-bg-success">Active</span>
+              } @else {
+                <span class="badge text-bg-warning">Inactive</span>
+              }
+            </dd>
+          </div>
+          <div class="meta-row">
+            <dt class="meta-key">Member since</dt>
+            <dd class="meta-val mb-0">{{ user.date_joined | date: 'mediumDate' }}</dd>
+          </div>
+        </dl>
+
+        <p class="form-text mt-4 mb-0">
+          Your username, role and department are set by an administrator. Role and department decide
+          what you can see and approve, and your username is what the audit trail records — so they
+          are not changed from here. Ask your Event Coordinator or an administrator if something is wrong.
+        </p>
+      }
+    </div>
+  </section>
+
+  <!-- ============================================================ PASSWORD -->
+  <section class="card" aria-labelledby="password-heading" id="password" [class.border-primary]="focusPassword()">
+    <div class="card-body">
+      <h2 class="section-title mb-1" id="password-heading">Change password</h2>
+      <p class="form-text mb-4">
+        Your new password is checked against the same strength rules the server applies everywhere else.
+      </p>
+
+      @if (firstError(); as message) {
+        <div class="alert alert-danger" role="alert">{{ message }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="mb-3">
+          <label class="form-label" for="old-password">
+            Current password <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="old-password"
+            type="password"
+            class="form-control"
+            autocomplete="current-password"
+            formControlName="old_password"
+            [class.is-invalid]="
+            (form.controls.old_password.invalid && form.controls.old_password.touched)
+            || !!fieldErrors()['old_password']
+            "
+            [attr.aria-describedby]="fieldErrors()['old_password'] ? 'old-password-error' : null"
+          />
+          @if (form.controls.old_password.invalid && form.controls.old_password.touched) {
+            <div class="invalid-feedback d-block">Your current password is required.</div>
+          }
+          @if (fieldErrors()['old_password']; as error) {
+            <div class="invalid-feedback d-block" id="old-password-error">{{ error }}</div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="new-password">
+            New password <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="new-password"
+            type="password"
+            class="form-control"
+            autocomplete="new-password"
+            formControlName="new_password"
+            aria-describedby="new-password-help"
+            [class.is-invalid]="
+            (form.controls.new_password.invalid && form.controls.new_password.touched)
+            || !!fieldErrors()['new_password']
+            "
+          />
+          <div class="form-text" id="new-password-help">At least 8 characters.</div>
+          @if (form.controls.new_password.hasError('minlength') && form.controls.new_password.touched) {
+            <div class="invalid-feedback d-block">Use at least 8 characters.</div>
+          }
+          @if (fieldErrors()['new_password']; as error) {
+            <div class="invalid-feedback d-block">{{ error }}</div>
+          }
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label" for="confirm-password">
+            Confirm new password <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="confirm-password"
+            type="password"
+            class="form-control"
+            autocomplete="new-password"
+            formControlName="confirm_new_password"
+            [class.is-invalid]="form.hasError('passwordMismatch') && form.controls.confirm_new_password.touched"
+          />
+          @if (form.hasError('passwordMismatch') && form.controls.confirm_new_password.touched) {
+            <div class="invalid-feedback d-block">Both passwords must match.</div>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Updating…
+          } @else {
+            <app-icon name="key" style="width: 1rem; height: 1rem" />
+            Update password
+          }
+        </button>
+      </form>
+    </div>
+  </section>
+</div>

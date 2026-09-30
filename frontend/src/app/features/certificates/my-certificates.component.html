@@ -1,0 +1,113 @@
+<a routerLink="/student/participation" class="back-link">&larr; Back to my participation</a>
+
+<div class="page-head">
+  <div class="page-head-titles">
+    <h1 class="page-title">My certificates</h1>
+    <p class="page-subtitle">
+      Certificate upload opens at midnight after the event, and only for events you submitted a
+      live capture for. Three attempts are allowed.
+    </p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger" role="alert">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="table-card" aria-hidden="true">
+    <div class="p-3">
+      @for (slot of [0, 1, 2]; track slot) {
+        <span class="skeleton skeleton-text"></span>
+      }
+    </div>
+  </div>
+  <span class="sr-only" role="status">Loading your certificates&hellip;</span>
+} @else if (rows().length === 0) {
+  <app-empty-state
+    title="No events yet"
+    message="Once you register for an event and submit your live capture, it appears here so you can upload the certificate afterwards."
+    icon="calendar"
+  />
+} @else {
+  <div class="table-card">
+    <div class="table-wrap">
+      <table class="table table-stack align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Event</th>
+            <th scope="col">Event date</th>
+            <th scope="col">Certificate</th>
+            <th scope="col">Attempts</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.registration_id) {
+            <tr>
+              <td data-label="Event"><span class="table-cell-value">{{ row.event.title }}</span></td>
+              <td data-label="Event date">
+                <span class="table-cell-value small text-muted">{{ row.event.event_date | date: 'mediumDate' }}</span>
+              </td>
+
+              <td data-label="Certificate">
+                <span class="badge" [ngClass]="statusClass(row)">{{ statusLabel(row) }}</span>
+
+                @if (latestFor(row); as certificate) {
+                  @if (certificate.status === 'REJECTED' && certificate.rejection_reason) {
+                    <span class="d-block small text-danger mt-1">
+                      Faculty: {{ certificate.rejection_reason }}
+                    </span>
+                  }
+                  @if (certificate.final_decision === 'REJECTED' && certificate.final_rejection_reason) {
+                    <span class="d-block small text-danger mt-1">
+                      Event Coordinator: {{ certificate.final_rejection_reason }}
+                    </span>
+                  }
+                  @if (certificate.final_decision === 'ACCEPTED') {
+                    <span class="d-block small text-success mt-1">Accepted by your Event Coordinator.</span>
+                  }
+                }
+              </td>
+
+              <td data-label="Attempts">
+                <span class="table-cell-value small">
+                  {{ row.certificate_attempts_used }} of
+                  {{ row.certificate_attempts_used + row.certificate_attempts_remaining }}
+                </span>
+              </td>
+
+              <td>
+                @if (canUpload(row)) {
+                  <!-- A label wrapping a hidden input keeps the native file
+                       picker while still looking like the other buttons. -->
+                  <label class="btn btn-sm btn-primary mb-0">
+                    @if (uploadingFor() === row.registration_id) {
+                      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                      Uploading&hellip;
+                    } @else {
+                      {{ row.certificate_attempts_used > 0 ? 'Resubmit certificate' : 'Upload certificate' }}
+                    }
+                    <input
+                      type="file"
+                      class="sr-only"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      [disabled]="uploadingFor() !== null"
+                      (change)="onFileSelected(row, $event)"
+                    />
+                  </label>
+                } @else if (latestFor(row); as certificate) {
+                  <a class="btn btn-sm btn-outline-secondary" [href]="certificate.download_url" target="_blank" rel="noopener">
+                    View submitted
+                  </a>
+                } @else {
+                  <span class="small text-muted">&mdash;</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
